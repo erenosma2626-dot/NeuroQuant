@@ -51,14 +51,14 @@ Modelin ham fiyat tahminleri, bir **"Threshold (Eşik)"** algoritmasından geçi
 
 ---
 
-## 📅 Proje Yol Haritası (4-Week Challenge)
+## 📅 Proje Yol Haritası
 
-Şu anda projenin **2. Haftasındayız** ve temel teknik analiz motorunu tamamladık.
+Şu anda projenin **2. Adımdayız** ve temel teknik analiz motorunu tamamladık.
 
-* ✅ **Hafta 1:** Veri Madenciliği, Temizlik ve Görselleştirme.
-* ✅ **Hafta 2:** LSTM Modellemesi, Eğitim ve Strateji Backtest'i.
-* 🚧 **Hafta 3 (Sırada):** Sentiment Analizi (Finansal Haberlerin NLP ile işlenmesi).
-* ⏳ **Hafta 4:** Entegrasyon, Otomasyon ve Final Canlı Test.
+* ✅ **Adım 1:** Veri Madenciliği, Temizlik ve Görselleştirme.
+* ✅ **Adım 2:** LSTM Modellemesi, Eğitim ve Strateji Backtest'i.
+* 🚧 **Adım 3 (Sırada):** Sentiment Analizi (Finansal Haberlerin NLP ile işlenmesi).
+* ⏳ **Adım 4:** Entegrasyon, Otomasyon ve Final Canlı Test.
 
 ---
 
