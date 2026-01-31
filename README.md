@@ -7,7 +7,6 @@
 
 **NeuroQuant**, finansal piyasalardaki karmaşık veri örüntülerini çözmek için tasarlanmış uçtan uca (end-to-end) bir Yapay Zeka projesidir. Geleneksel teknik analizi, **Derin Öğrenme (LSTM)** ve **Doğal Dil İşleme (NLP/Sentiment Analysis)** ile birleştirerek hibrit bir karar mekanizması oluşturmayı hedefler.
 
-> *"Piyasayı yenmek şans işi değil, mühendislik işidir."*
 
 ---
 
