@@ -1,3 +1,4 @@
+from xml.parsers.expat import model
 import streamlit as st
 import pandas as pd
 from neuro_modules import ui  # Az önce yarattığımız görselci
@@ -17,7 +18,8 @@ def main():
     # Şimdilik sadece butona basınca çalışsın.
     if is_clicked:
         # 2. Beyinleri Yükle (Cache sayesinde hızlıdır)
-        model, scaler, sentiment_pipe = ai_engine.load_brains()
+        # Scaler'ı sildik, sadece 2 değişken alıyoruz
+        model, sentiment_pipe = ai_engine.load_brains()
         
         if not model or not sentiment_pipe:
             st.error("Modeller yüklenemedi! Lütfen kurulumu kontrol et.")
@@ -32,7 +34,8 @@ def main():
                 # 4. Analiz (Intelligence Layer)
                 # a) Teknik Tahmin
                 last_60_days = df.tail(60)
-                future_preds = ai_engine.predict_future(model, scaler, last_60_days)
+                # Verimizin adı 'df', onu gönderiyoruz
+                future_preds = ai_engine.predict_future(model, df)
                 
                 # b) Duygu Analizi (Veto Mekanizmalı)
                 avg_sentiment, label, risky_news = ai_engine.score_news(sentiment_pipe, news_list)

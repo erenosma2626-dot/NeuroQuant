@@ -2,101 +2,80 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 import joblib
-from tensorflow.keras.models import load_model
 from transformers import pipeline
 import os
 
-# --- 1. AYARLAR VE YÜKLEME ---
+# --- 1. AYARLAR ---
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MODEL_DIR = os.path.join(BASE_DIR, 'models')
 
 @st.cache_resource
 def load_brains():
-    """Modelleri önbelleğe alarak yükler."""
+    """
+    Evrensel Random Forest Modelini ve FinBERT'i yükler.
+    Artık Scaler yok, çünkü Random Forest buna ihtiyaç duymaz.
+    """
     print("🧠 AI Motorları Yükleniyor...")
     
-    # LSTM
+    # A) Random Forest (Fiyat Tahmini)
     try:
-        model = load_model(os.path.join(MODEL_DIR, 'neuroquant_lstm.h5'))
-        scaler = joblib.load(os.path.join(MODEL_DIR, 'scaler.pkl'))
+        model = joblib.load(os.path.join(MODEL_DIR, 'universal_rf.pkl'))
     except Exception as e:
-        st.error(f"🚨 LSTM yüklenemedi: {e}")
-        return None, None, None
+        st.error(f"🚨 Model Dosyası Bulunamadı: {e}")
+        st.warning("⚠️ Lütfen önce 'python training/train_universal.py' kodunu çalıştırın.")
+        return None, None
 
-    # FinBERT
+    # B) FinBERT (Haber Analizi)
     try:
         sentiment_pipe = pipeline("sentiment-analysis", model="yiyanghkust/finbert-tone")
     except Exception as e:
         st.error(f"🚨 FinBERT yüklenemedi: {e}")
-        return model, scaler, None
+        return model, None
 
-    return model, scaler, sentiment_pipe
+    return model, sentiment_pipe
 
-# --- 2. TEKNİK ANALİZ MOTORU (LSTM) ---
-# --- MEVCUT PREDICT_FUTURE FONKSİYONUNU BUNUNLA DEĞİŞTİR ---
-
-def predict_future(model, scaler, last_60_days_df):
+# --- 2. TEKNİK ANALİZ MOTORU ---
+def predict_future(model, last_60_days_df):
     """
-    LSTM tahminlerini üretir ve 'Volatilite Kelepçesi' (Max %2 günlük değişim) uygular.
+    Random Forest ile Gelecek Tahmini.
+    Fiyatları değil, % Değişimleri kullanır.
     """
-    feature_cols = ['Open', 'High', 'Low', 'Close', 'Volume']
-    available_cols = [c for c in feature_cols if c in last_60_days_df.columns]
+    # Veri Hazırlığı
+    prices = last_60_days_df['Close'].values
     
-    raw_data = last_60_days_df[available_cols].values
-    scaled_data = scaler.transform(raw_data)
-    current_batch = scaled_data.reshape(1, 60, len(available_cols))
+    # Fiyatı Yüzde Değişime Çevir
+    pct_changes = pd.Series(prices).pct_change().fillna(0).values
     
-    predicted_prices = []
-    
-    # Referans Fiyat
-    last_real_price = last_60_days_df['Close'].iloc[-1]
-    curr_price = last_real_price 
-    
-    # --- AYARLAR ---
-    MAX_DAILY_CHANGE = 0.02 # Günlük maksimum %2 değişim izni (Nasdaq standardı)
-    
-    for i in range(5):
-        # 1. Ham Tahmin
-        pred = model(current_batch, training=False)
-        pred_scaled = pred.numpy()[0][0]
+    # Yeterli veri yoksa (Yeni halka arz vb.)
+    if len(pct_changes) < 60:
+        return [prices[-1]] * 5
         
-        # Batch güncelleme
-        next_input_scaled = current_batch[0, -1, :].copy()
-        next_input_scaled[3] = pred_scaled
-        new_step = next_input_scaled.reshape(1, 1, len(available_cols))
-        current_batch = np.append(current_batch[:, 1:, :], new_step, axis=1)
-        
-        # 2. Fiyata Çevirme
-        unscaled_row = scaler.inverse_transform(next_input_scaled.reshape(1, -1))
-        raw_pred_price = unscaled_row[0][3]
-        
-        # 3. VOLATİLİTE KELEPÇESİ (Smart Clamping)
-        # Modelin ham tahmini ile şu anki fiyat arasındaki farka bakıyoruz.
-        change_pct = (raw_pred_price - curr_price) / curr_price
-        
-        # Eğer değişim %2'den büyükse, zorla %2'ye çekiyoruz.
-        if change_pct > MAX_DAILY_CHANGE:
-            target_price = curr_price * (1 + MAX_DAILY_CHANGE)
-        elif change_pct < -MAX_DAILY_CHANGE:
-            target_price = curr_price * (1 - MAX_DAILY_CHANGE)
-        else:
-            target_price = raw_pred_price
+    # Son 60 günün değişimini modele ver (2D Array olarak)
+    input_features = pct_changes[-60:].reshape(1, -1)
+    
+    # Tahmin (Gelecek 5 günün % değişimi)
+    # Random Forest direkt 5 çıktılı vektör verir
+    pred_pcts = model.predict(input_features)[0]
+    
+    # Fiyatı Geri İnşa Et (Reconstruct Price)
+    current_price = prices[-1]
+    future_prices = []
+    
+    for pct in pred_pcts:
+        # Güvenlik Limiti (%5) - Modelin uçmasını engeller
+        if pct > 0.05: pct = 0.05
+        if pct < -0.05: pct = -0.05
             
-        # 4. Yumuşatma (Smoothing) - Son Rötuş
-        # Kelepçelenmiş fiyatı bile önceki günle harmanlayıp keskin köşeleri alıyoruz.
-        # %70 Önceki Gün, %30 Yeni Hedef (Trend devamlılığı sağlar)
-        smoothed_price = (curr_price * 0.70) + (target_price * 0.30)
+        next_price = current_price * (1 + pct)
+        future_prices.append(next_price)
+        current_price = next_price
         
-        predicted_prices.append(smoothed_price)
-        curr_price = smoothed_price
+    return future_prices
 
-    return predicted_prices
-
-# --- 3. DUYGU ANALİZİ (VETO MANTIKLI) ---
+# --- 3. DUYGU ANALİZİ (VETO DESTEKLİ) ---
+# Bu kısım eski kodun aynısı, çünkü UI burayı kullanıyor.
 def score_news(sentiment_pipe, news_list):
-    """
-    Haberleri puanlar ve her habere 'ai_score' etiketi yapıştırır.
-    """
+    """Haberleri puanlar ve risk analizi yapar."""
     if not news_list:
         return 0, "Nötr", None
     
@@ -105,16 +84,16 @@ def score_news(sentiment_pipe, news_list):
     min_score = 1.0 
     riskiest_news = None 
     RISK_THRESHOLD = -0.20 
-
-    print(f"📰 {len(news_list)} haber analiz ediliyor...")
     
     for news in news_list:
         text = news['title']
-        
-        # FinBERT Analizi
-        result = sentiment_pipe(text[:512])[0]
-        label = result['label']
-        confidence = result['score']
+        try:
+            # FinBERT Analizi
+            result = sentiment_pipe(text[:512])[0]
+            label = result['label']
+            confidence = result['score']
+        except:
+            continue
         
         if label == 'Positive':
             ai_score = confidence
@@ -123,12 +102,10 @@ def score_news(sentiment_pipe, news_list):
         else:
             ai_score = 0
             
-        # --- YENİ EKLENTİ: Skoru Habere Kaydet ---
-        # Böylece UI tarafında "Bu haberin puanı %85" diye gösterebileceğiz.
+        # UI için skoru habere yapıştır
         news['ai_score'] = ai_score 
-        news['ai_label'] = label # 'Positive', 'Negative' yazısı
         
-        # Risk Takibi
+        # Risk Takibi (En kötü haberi bul)
         if ai_score < min_score:
             min_score = ai_score
             if ai_score < RISK_THRESHOLD:
@@ -148,12 +125,10 @@ def score_news(sentiment_pipe, news_list):
     
     return final_avg, general_sentiment, riskiest_news
 
-# --- 4. HİBRİT KARAR MEKANİZMASI (HAKİM) ---
+# --- 4. KARAR MEKANİZMASI ---
 def make_final_decision(lstm_preds, sentiment_score, riskiest_news, current_rsi):
-    """
-    Teknik + Temel + Veto yetkisi ile nihai kararı verir.
-    """
-    # Teknik Yön (Yüzde Değişim)
+    """Yatırım Kararını Verir."""
+    # Fiyat Değişimi Hesabı
     start_price = lstm_preds[0]
     end_price = lstm_preds[-1]
     price_change_pct = ((end_price - start_price) / start_price) * 100
@@ -162,83 +137,22 @@ def make_final_decision(lstm_preds, sentiment_score, riskiest_news, current_rsi)
     color = "gray"
     explanation = "Yeterli sinyal oluşmadı."
     
-    # --- VETO KONTROLÜ (GÜVENLİK SİGORTASI) ---
-    # Haberlerin ortalaması iyi olsa bile, tek bir FELAKET haberi varsa fren yap.
-    riskiest_score = 0
-    if riskiest_news:
-        # Haberi tekrar puanlayıp (veya stored puanı alıp) kontrol etmek yerine
-        # score_news içinde hesaplanan min_score'u da döndürebilirdik ama
-        # şimdilik tekrar basit bir kontrol yapalım veya varsayalım.
-        # Basitlik için: Genel sentiment çok kötüyse zaten negatiftir.
-        pass 
-
-    # KURAL 1: RSI VETOSU
+    # 1. RSI Kontrolü
     if current_rsi > 70:
-        decision = "RİSKLİ / BEKLE (RSI Şişik)"
-        color = "orange"
-        explanation = f"Teknik göstergeler (RSI: {current_rsi:.0f}) aşırı alım bölgesinde. Düzeltme ihtimali yüksek."
-        if sentiment_score > 0.2:
-            explanation += " Ancak haber akışı pozitif olduğu için 'Short Squeeze' (yukarı patlama) olabilir. Stop-loss ile izle."
-        return decision, color, explanation
+        return "RİSKLİ (RSI Şişik)", "orange", f"RSI {current_rsi:.0f} seviyesinde, düzeltme gelebilir."
+        
+    # 2. Haber Vetosusu
+    if riskiest_news and sentiment_score < 0:
+        return "SAT / UZAK DUR", "red", f"Riskli haber tespit edildi: '{riskiest_news['title']}'."
 
-    # KURAL 2: HABER VETOSU (Outlier Detection)
-    # Eğer ortalama puan iyiyse bile (-0.5'ten iyi), ama en kötü haber -0.8'den kötüyse:
-    # (Burada riskiest_news objesinden skoru tekrar çekmiyoruz, basitlik için sentiment_score üzerinden gidiyoruz
-    # ama Dashboard'da o haberi göstereceğiz.)
-    if sentiment_score < -0.4: # Genel hava kötüyse
-        decision = "SAT / UZAK DUR"
-        color = "red"
-        explanation = "Haber akışı belirgin şekilde negatif. Teknik yükseliş gösterse bile 'Boğa Tuzağı' riski var."
-        return decision, color, explanation
+    # 3. Trend Kararı
+    if price_change_pct > 0.1:
+        if sentiment_score > 0: # Haber de biraz pozitifse yeter
+            return "AL (Fırsat)", "green", f"Model %{price_change_pct:.2f} yükseliş öngörüyor."
+        else:
+            return "AL (Riskli)", "blue", "Model yükseliş bekliyor ama haberler desteklemiyor."
 
-    # KURAL 3: NORMAL AKIŞ
-    if price_change_pct > 1.0: # LSTM Yükseliş Bekliyor
-        if sentiment_score > 0.15:
-            decision = "GÜÇLÜ AL 🚀"
-            color = "green"
-            explanation = f"Yapay zeka %{price_change_pct:.1f} yükseliş öngörüyor ve haber akışı bunu destekliyor."
-        else:
-            decision = "AL (Temkinli)"
-            color = "blue"
-            explanation = "Teknik yükseliş var ancak haber akışı nötr/zayıf."
-            
-    elif price_change_pct < -1.0: # LSTM Düşüş Bekliyor
-        if sentiment_score < -0.15:
-            decision = "GÜÇLÜ SAT 🔻"
-            color = "red"
-            explanation = "Hem teknik model hem haberler düşüşü işaret ediyor."
-        else:
-            decision = "SAT (Tepki Gelebilir)"
-            color = "orange"
-            explanation = "Teknik düşüş trendinde ama haberler kötü değil. Yatay seyir olabilir."
-            
+    elif price_change_pct < -0.1:
+        return "SAT", "red", f"Model %{price_change_pct:.2f} düşüş öngörüyor."
+        
     return decision, color, explanation
-
-# --- ENTEGRASYON VE VETO TESTİ ---
-if __name__ == "__main__":
-    import sys
-    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    from neuro_modules.news_scraper import get_google_news
-    
-    print("\n🚀 VETO SİSTEM TESTİ...\n")
-    m, s, pipe = load_brains()
-    
-    if m and pipe:
-        # 1. Gerçek Haberleri Çek
-        real_news = get_google_news("NVDA", max_results=10)
-        
-        # 2. Haberleri Puanla
-        avg_score, label, risky_news = score_news(pipe, real_news)
-        
-        print(f"\n📊 Ortalama Skor: {avg_score:.3f} ({label})")
-        if risky_news:
-            print(f"⚠️ En Riskli Haber: {risky_news['title']}")
-            
-        # 3. Karar Testi (Sahte Teknik Verilerle)
-        # Senaryo: LSTM %3 artış diyor, RSI 60 (Normal), Ama haberler ne diyor?
-        fake_lstm_preds = [100, 101, 102, 103, 103] # Yükseliş
-        fake_rsi = 60
-        
-        dec, col, expl = make_final_decision(fake_lstm_preds, avg_score, risky_news, fake_rsi)
-        print(f"\n⚖️ KARAR: {dec}")
-        print(f"📝 Açıklama: {expl}")

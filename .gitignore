@@ -1,0 +1,20 @@
+# Python Çöpleri
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Sanal Ortamlar (GitHub'a yüklenmez, her pc kendi kurar)
+.venv/
+venv/
+env/
+
+# Mac ve Windows Çöpleri
+.DS_Store
+Thumbs.db
+
+# Veri setleri (Çok büyük dosyaları yüklememek için, opsiyonel)
+# stocks_hazir_veri.csv 
+# (Ama şimdilik veri setimiz küçük kalsın dersen bunu ekleme)
+
+# Modeller (Eğer çok büyükse LFS gerekir ama şimdilik kalsın)
+# models/*.h5
