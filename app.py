@@ -74,7 +74,22 @@ def main():
                     # Eski usül temiz görünüm
                     ui.render_decision_gauge(decision, color, explanation, avg_sentiment)
                     ui.render_chart(df, future_preds)
-                
+                    # --- ZAMAN DİLİMİ AYARI (ui.py'ye dokunmadan ekliyoruz) ---
+                    st.sidebar.markdown("---")
+                    st.sidebar.header("⏳ Zaman Dilimi")
+                    time_choice = st.sidebar.radio("Analiz Aralığı:", ["Günlük (1 Gün)", "Haftalık (1 Hafta)", "Saatlik (1 Saat)"])
+                    
+                    # Seçime göre ayarları belirle
+                    if "Haftalık" in time_choice:
+                        param_interval = "1wk"
+                        param_period = "5y"  # Haftalıkta daha geriye gidelim
+                    elif "Saatlik" in time_choice:
+                        param_interval = "1h"
+                        param_period = "3mo" # Saatlikte çok geriye gidilmez (Yahoo sınırı)
+                    else:
+                        param_interval = "1d"
+                        param_period = "2y"  # Standart Günlük
+                    # ---------------------------------------------------------
                 with tab2:
                     # Yeni Hacim ve RSI Grafikleri
                     ui.render_technical_charts(df)
