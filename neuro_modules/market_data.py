@@ -44,6 +44,11 @@ def get_rich_market_data(ticker="NVDA", period="2y", interval="1d"):
     
     # --- SMA (20 & 50) Trend Takibi ---
     df['SMA_20'] = df['Close'].rolling(window=20).mean()
+
+    # --- BOLLINGER BANTLARI EKLENİYOR ---
+    df['SMA_20'] = df['Close'].rolling(window=20).mean()
+    df['BB_Upper'] = df['SMA_20'] + 2 * df['Close'].rolling(window=20).std()
+    df['BB_Lower'] = df['SMA_20'] - 2 * df['Close'].rolling(window=20).std()
     
     # 3. Temizlik (İlk satırlarda NaN oluşur hesaplamadan dolayı, onları atalım)
     df.dropna(inplace=True)

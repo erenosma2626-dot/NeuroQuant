@@ -1,6 +1,7 @@
 from xml.parsers.expat import model
 import streamlit as st
 import pandas as pd
+import plotly.graph_objects as go
 from neuro_modules import ui  # Az önce yarattığımız görselci
 from neuro_modules import market_data
 from neuro_modules import news_scraper
@@ -14,6 +15,19 @@ def main():
     # 1. Kenar Çubuğunu Çiz ve Girdileri Al
     ticker, is_clicked = ui.render_sidebar()
     
+    with st.expander("ℹ️ Proje Amacı ve Yasal Uyarı (Lütfen Okuyunuz)", expanded=False):
+        st.markdown("""
+        ### 🧠 NeuroQuant Nedir?
+        Bu proje, finansal piyasaları analiz etmek için **Yapay Zeka (LSTM & FinBERT)** teknolojilerini kullanan deneysel bir analiz aracıdır. Geçmiş verilerden öğrenerek teknik analiz yapar ve haber akışlarını yorumlar.
+        
+        ---
+        
+        ### ⚠️ YASAL UYARI (YTD)
+        **Burada yer alan bilgi, yorum ve tavsiyeler Yatırım Danışmanlığı kapsamında DEĞİLDİR.**
+        * Bu uygulama sadece **eğitim ve analiz** amaçlı geliştirilmiştir.
+        * Yapay zeka tahminleri geleceği garanti edemez ve hata payı içerir.
+        * Yatırım kararlarınızı kendi araştırmanıza veya yetkili yatırım danışmanlarına dayanarak veriniz.
+        """)
     # is_clicked True ise (Butona basıldıysa) VEYA ticker değiştiyse çalıştırabiliriz.
     # Şimdilik sadece butona basınca çalışsın.
     if is_clicked:
@@ -54,7 +68,8 @@ def main():
                 
                 # SEKMELİ YAPI (TABS)
                 tab1, tab2, tab3 = st.tabs(["🚀 Ana Özet", "📊 Teknik Detaylar", "📰 Haber Masası"])
-                
+
+
                 with tab1:
                     # Eski usül temiz görünüm
                     ui.render_decision_gauge(decision, color, explanation, avg_sentiment)
@@ -63,6 +78,26 @@ def main():
                 with tab2:
                     # Yeni Hacim ve RSI Grafikleri
                     ui.render_technical_charts(df)
+                
+                # --- EKLENEN KISIM: Yeni Grafikler ---
+                with st.expander("📊 Gelişmiş Teknik Analiz (Bollinger & MACD)", expanded=True):
+                    # 1. Bollinger Grafiği
+                    st.caption("Bollinger Bantları (Volatilite)")
+                    fig_bb = go.Figure()
+                    fig_bb.add_trace(go.Scatter(x=df.index, y=df['BB_Upper'], name='Üst Bant', line=dict(color='gray', width=1, dash='dot')))
+                    fig_bb.add_trace(go.Scatter(x=df.index, y=df['BB_Lower'], name='Alt Bant', line=dict(color='gray', width=1, dash='dot'), fill='tonexty'))
+                    fig_bb.add_trace(go.Scatter(x=df.index, y=df['Close'], name='Fiyat', line=dict(color='blue', width=2)))
+                    fig_bb.update_layout(height=300, margin=dict(l=0,r=0,t=0,b=0))
+                    st.plotly_chart(fig_bb, use_container_width=True)
+                    
+                    # 2. MACD Grafiği
+                    st.caption("MACD (Trend Yönü)")
+                    fig_macd = go.Figure()
+                    fig_macd.add_trace(go.Scatter(x=df.index, y=df['MACD'], name='MACD', line=dict(color='green')))
+                    fig_macd.add_trace(go.Scatter(x=df.index, y=df['MACD_Signal'], name='Sinyal', line=dict(color='red')))
+                    fig_macd.update_layout(height=200, margin=dict(l=0,r=0,t=0,b=0))
+                    st.plotly_chart(fig_macd, use_container_width=True)
+               # -------------------------------------
                     
                 with tab3:
                     # Yeni Haber Kartları (AI Puanlı)
