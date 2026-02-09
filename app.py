@@ -14,14 +14,22 @@ st.set_page_config(page_title="NeuroQuant v2.0", page_icon="🧠", layout="wide"
 def main():
     # 1. Kenar Çubuğunu Çiz ve Girdileri Al
     ticker, is_clicked = ui.render_sidebar()
+
     
+    #---------------------------------------------------------------------------
     if 'analiz_aktif' not in st.session_state:
         st.session_state['analiz_aktif'] = False
+        st.session_state['secilen_ticker'] = ""
 
-    # Eğer butona basıldıysa, hafızayı "True" yap.
-    if is_clicked:
+    # 2. Eğer "Analizi Başlat" butonuna basıldıysa hafızayı GÜNCELLE
+    if button_click:
         st.session_state['analiz_aktif'] = True
-    # --------------------------------------
+        st.session_state['secilen_ticker'] = ticker
+    
+    # 3. Eğer kullanıcı hisseyi değiştirdiyse ama butona basmadıysa analizi kapat (Kafa karışıklığı olmasın)
+    if ticker != st.session_state['secilen_ticker']:
+        st.session_state['analiz_aktif'] = False
+    #---------------------------------------------------------------------------
 
 
     with st.expander("ℹ️ Proje Amacı ve Yasal Uyarı (Lütfen Okuyunuz)", expanded=False):
