@@ -15,14 +15,14 @@ def main():
     # 1. Kenar Çubuğunu Çiz ve Girdileri Al
     ticker, is_clicked = ui.render_sidebar()
 
-    
+
     #---------------------------------------------------------------------------
     if 'analiz_aktif' not in st.session_state:
         st.session_state['analiz_aktif'] = False
         st.session_state['secilen_ticker'] = ""
 
     # 2. Eğer "Analizi Başlat" butonuna basıldıysa hafızayı GÜNCELLE
-    if button_click:
+    if is_clicked:
         st.session_state['analiz_aktif'] = True
         st.session_state['secilen_ticker'] = ticker
     
