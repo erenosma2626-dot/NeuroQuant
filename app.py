@@ -14,6 +14,19 @@ st.set_page_config(page_title="NeuroQuant v2.0", page_icon="🧠", layout="wide"
 def main():
     # 1. Kenar Çubuğunu Çiz ve Girdileri Al
     ticker, is_clicked = ui.render_sidebar()
+
+    st.write("---")
+    col_t1, col_t2 = st.columns([3, 1])
+    with col_t1:
+        st.info("💡 İpucu: Kripto için 'Saatlik', hisseler için 'Günlük' önerilir.")
+    with col_t2:
+        # Seçimi yapıp bir değişkene atıyoruz
+        time_choice = st.selectbox("⏳ Zaman Aralığı:", 
+                                   ["Günlük", "Haftalık", "Saatlik"], 
+                                   key="time_selector")
+
+    # 2. BUTONU DEĞİŞKENE ATA (Senin istediğin yöntem)
+    is_clicked = st.button('🚀 Analizi Başlat', use_container_width=True)
     
     with st.expander("ℹ️ Proje Amacı ve Yasal Uyarı (Lütfen Okuyunuz)", expanded=False):
         st.markdown("""
@@ -28,16 +41,29 @@ def main():
         * Yapay zeka tahminleri geleceği garanti edemez ve hata payı içerir.
         * Yatırım kararlarınızı kendi araştırmanıza veya yetkili yatırım danışmanlarına dayanarak veriniz.
         """)
+
     # is_clicked True ise (Butona basıldıysa) VEYA ticker değiştiyse çalıştırabiliriz.
     # Şimdilik sadece butona basınca çalışsın.
     if is_clicked:
         # 2. Beyinleri Yükle (Cache sayesinde hızlıdır)
         # Scaler'ı sildik, sadece 2 değişken alıyoruz
         model, scaler, sentiment_pipe = ai_engine.load_brains()
-        
+
         if not model or not sentiment_pipe:
             st.error("Modeller yüklenemedi! Lütfen kurulumu kontrol et.")
             return
+
+        # --- ZAMAN PARAMETRELERİNİ AYARLA ---
+        # (Seçilen 'time_choice'a göre ayar yapıyoruz)
+        if time_choice == "Haftalık":
+            param_period = "5y"
+            param_interval = "1wk"
+        elif time_choice == "Saatlik":
+            param_period = "2y"   # Yahoo en fazla 2 yıl verir
+            param_interval = "1h"
+        else: # Günlük (Varsayılan)
+            param_period = "2y"
+            param_interval = "1d"
 
         with st.spinner(f'{ticker} için yapay zeka çalışıyor...'):
             try:
@@ -75,21 +101,7 @@ def main():
                     ui.render_decision_gauge(decision, color, explanation, avg_sentiment)
                     ui.render_chart(df, future_preds)
                     # --- ZAMAN DİLİMİ AYARI (ui.py'ye dokunmadan ekliyoruz) ---
-                    st.sidebar.markdown("---")
-                    st.sidebar.header("⏳ Zaman Dilimi")
-                    time_choice = st.sidebar.radio("Analiz Aralığı:", ["Günlük (1 Gün)", "Haftalık (1 Hafta)", "Saatlik (1 Saat)"])
-                    
-                    # Seçime göre ayarları belirle
-                    if "Haftalık" in time_choice:
-                        param_interval = "1wk"
-                        param_period = "5y"  # Haftalıkta daha geriye gidelim
-                    elif "Saatlik" in time_choice:
-                        param_interval = "1h"
-                        param_period = "3mo" # Saatlikte çok geriye gidilmez (Yahoo sınırı)
-                    else:
-                        param_interval = "1d"
-                        param_period = "2y"  # Standart Günlük
-                    # ---------------------------------------------------------
+                
                 with tab2:
                     # Yeni Hacim ve RSI Grafikleri
                     ui.render_technical_charts(df)
