@@ -19,7 +19,7 @@ def main():
     if is_clicked:
         # 2. Beyinleri Yükle (Cache sayesinde hızlıdır)
         # Scaler'ı sildik, sadece 2 değişken alıyoruz
-        model, sentiment_pipe = ai_engine.load_brains()
+        model, scaler, sentiment_pipe = ai_engine.load_brains()
         
         if not model or not sentiment_pipe:
             st.error("Modeller yüklenemedi! Lütfen kurulumu kontrol et.")
@@ -35,7 +35,7 @@ def main():
                 # a) Teknik Tahmin
                 last_60_days = df.tail(60)
                 # Verimizin adı 'df', onu gönderiyoruz
-                future_preds = ai_engine.predict_future(model, df)
+                future_preds = ai_engine.predict_future(model, scaler, df)
                 
                 # b) Duygu Analizi (Veto Mekanizmalı)
                 avg_sentiment, label, risky_news = ai_engine.score_news(sentiment_pipe, news_list)

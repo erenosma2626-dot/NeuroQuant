@@ -1,70 +1,91 @@
+import os
+# --- MAC DONMA ÇÖZÜMÜ (EN TEPEYE) ---
+# TensorFlow'un Mac GPU'sunu görmesini engelliyoruz.
+# Sadece CPU kullanarak kilitlenmeyi önleriz.
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
+
+
 import streamlit as st
 import numpy as np
 import pandas as pd
 import joblib
+from tensorflow.keras.models import load_model
 from transformers import pipeline
-import os
 
-# --- 1. AYARLAR ---
+# --- AYARLAR ---
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MODEL_DIR = os.path.join(BASE_DIR, 'models')
 
 @st.cache_resource
 def load_brains():
     """
-    Evrensel Random Forest Modelini ve FinBERT'i yükler.
-    Artık Scaler yok, çünkü Random Forest buna ihtiyaç duymaz.
+    LSTM Modelini, Scaler'ı ve FinBERT'i yükler.
+    Artık 3 parça dönüyor: Model, Scaler, Pipe.
     """
-    print("🧠 AI Motorları Yükleniyor...")
+    print("🧠 LSTM Motorları Yükleniyor...")
     
-    # A) Random Forest (Fiyat Tahmini)
+    # 1. LSTM Modeli (.h5)
     try:
-        model = joblib.load(os.path.join(MODEL_DIR, 'universal_rf.pkl'))
+        model = load_model(os.path.join(MODEL_DIR, 'universal_lstm.h5'))
     except Exception as e:
         st.error(f"🚨 Model Dosyası Bulunamadı: {e}")
-        st.warning("⚠️ Lütfen önce 'python training/train_universal.py' kodunu çalıştırın.")
-        return None, None
+        return None, None, None
 
-    # B) FinBERT (Haber Analizi)
+    # 2. Scaler (.pkl) - LSTM için şart!
+    try:
+        scaler = joblib.load(os.path.join(MODEL_DIR, 'universal_scaler.pkl'))
+    except Exception as e:
+        st.error(f"🚨 Scaler Bulunamadı: {e}")
+        return model, None, None
+
+    # 3. FinBERT (Haber Analizi)
     try:
         sentiment_pipe = pipeline("sentiment-analysis", model="yiyanghkust/finbert-tone")
     except Exception as e:
-        st.error(f"🚨 FinBERT yüklenemedi: {e}")
-        return model, None
+        st.warning(f"⚠️ FinBERT yüklenemedi (Haber analizi çalışmayacak): {e}")
+        return model, scaler, None
 
-    return model, sentiment_pipe
+    return model, scaler, sentiment_pipe
 
-# --- 2. TEKNİK ANALİZ MOTORU ---
-def predict_future(model, last_60_days_df):
+# --- TEKNİK ANALİZ MOTORU (LSTM UYUMLU) ---
+def predict_future(model, scaler, df):
     """
-    Random Forest ile Gelecek Tahmini.
-    Fiyatları değil, % Değişimleri kullanır.
+    LSTM ile Gelecek Tahmini.
+    Scaler kullanarak veriyi 0-1 arasına sıkıştırır ve 3D formatına sokar.
     """
-    # Veri Hazırlığı
-    prices = last_60_days_df['Close'].values
+    # 1. Veriyi Hazırla (% Değişim)
+    prices = df['Close'].values
+    pct_changes = df['Close'].pct_change().fillna(0).values.reshape(-1, 1)
     
-    # Fiyatı Yüzde Değişime Çevir
-    pct_changes = pd.Series(prices).pct_change().fillna(0).values
-    
-    # Yeterli veri yoksa (Yeni halka arz vb.)
+    # Yeterli veri kontrolü (60 gün lazım)
     if len(pct_changes) < 60:
         return [prices[-1]] * 5
         
-    # Son 60 günün değişimini modele ver (2D Array olarak)
-    input_features = pct_changes[-60:].reshape(1, -1)
+    # 2. Ölçeklendir (Scaling)
+    # Model 0-1 arası sayılarla eğitildi, aynısını verelim.
+    scaled_data = scaler.transform(pct_changes)
     
-    # Tahmin (Gelecek 5 günün % değişimi)
-    # Random Forest direkt 5 çıktılı vektör verir
-    pred_pcts = model.predict(input_features)[0]
+    # 3. Son 60 günü al ve Reshape yap (1, 60, 1)
+    # (Batch Size, Time Steps, Features)
+    current_batch = scaled_data[-60:].reshape(1, 60, 1)
     
-    # Fiyatı Geri İnşa Et (Reconstruct Price)
+    # 4. Tahmin Et
+    predicted_scaled = model.predict(current_batch, verbose=0)[0] # Çıktı: [0.5, 0.6, ...]
+    
+    # 5. Ters Ölçeklendir (Inverse Transform)
+    # Modelin ürettiği 0-1 arası sayıları tekrar % değişime çevir.
+    predicted_pcts = scaler.inverse_transform(predicted_scaled.reshape(-1, 1)).flatten()
+    
+    # 6. Fiyatı İnşa Et
     current_price = prices[-1]
     future_prices = []
     
-    for pct in pred_pcts:
-        # Güvenlik Limiti (%5) - Modelin uçmasını engeller
-        if pct > 0.05: pct = 0.05
-        if pct < -0.05: pct = -0.05
+    for pct in predicted_pcts:
+        # Volatilite Kontrolü (Opsiyonel Güvenlik)
+        # LSTM bazen uçabilir, %10 üstü değişimleri tıraşlayalım.
+        if pct > 0.10: pct = 0.10
+        if pct < -0.10: pct = -0.10
             
         next_price = current_price * (1 + pct)
         future_prices.append(next_price)
@@ -72,87 +93,50 @@ def predict_future(model, last_60_days_df):
         
     return future_prices
 
-# --- 3. DUYGU ANALİZİ (VETO DESTEKLİ) ---
-# Bu kısım eski kodun aynısı, çünkü UI burayı kullanıyor.
+# --- DUYGU ANALİZİ (AYNI KALDI) ---
 def score_news(sentiment_pipe, news_list):
-    """Haberleri puanlar ve risk analizi yapar."""
-    if not news_list:
+    if not news_list or not sentiment_pipe:
         return 0, "Nötr", None
     
     total_score = 0
     analyzed_count = 0
     min_score = 1.0 
     riskiest_news = None 
-    RISK_THRESHOLD = -0.20 
     
     for news in news_list:
-        text = news['title']
         try:
-            # FinBERT Analizi
-            result = sentiment_pipe(text[:512])[0]
-            label = result['label']
-            confidence = result['score']
-        except:
-            continue
-        
-        if label == 'Positive':
-            ai_score = confidence
-        elif label == 'Negative':
-            ai_score = -confidence
-        else:
-            ai_score = 0
+            result = sentiment_pipe(news['title'][:512])[0]
+            score = result['score'] if result['label'] == 'Positive' else -result['score'] if result['label'] == 'Negative' else 0
+            news['ai_score'] = score
             
-        # UI için skoru habere yapıştır
-        news['ai_score'] = ai_score 
+            if score < min_score:
+                min_score = score
+                if score < -0.2: riskiest_news = news 
+            
+            total_score += score
+            analyzed_count += 1
+        except: continue
         
-        # Risk Takibi (En kötü haberi bul)
-        if ai_score < min_score:
-            min_score = ai_score
-            if ai_score < RISK_THRESHOLD:
-                riskiest_news = news 
-        
-        total_score += ai_score
-        analyzed_count += 1
-        
-    if analyzed_count == 0:
-        return 0, "Nötr", None
-        
-    final_avg = total_score / analyzed_count
+    if analyzed_count == 0: return 0, "Nötr", None
     
-    general_sentiment = "NÖTR"
-    if final_avg > 0.15: general_sentiment = "POZİTİF"
-    elif final_avg < -0.15: general_sentiment = "NEGATİF"
-    
-    return final_avg, general_sentiment, riskiest_news
+    avg = total_score / analyzed_count
+    label = "POZİTİF" if avg > 0.15 else "NEGATİF" if avg < -0.15 else "NÖTR"
+    return avg, label, riskiest_news
 
-# --- 4. KARAR MEKANİZMASI ---
-def make_final_decision(lstm_preds, sentiment_score, riskiest_news, current_rsi):
-    """Yatırım Kararını Verir."""
-    # Fiyat Değişimi Hesabı
-    start_price = lstm_preds[0]
-    end_price = lstm_preds[-1]
-    price_change_pct = ((end_price - start_price) / start_price) * 100
+# --- KARAR MEKANİZMASI ---
+def make_final_decision(preds, sentiment_score, riskiest_news, current_rsi):
+    start_p = preds[0]
+    end_p = preds[-1]
+    change_pct = ((end_p - start_p) / start_p) * 100
     
-    decision = "NÖTR / İZLE"
-    color = "gray"
-    explanation = "Yeterli sinyal oluşmadı."
-    
-    # 1. RSI Kontrolü
-    if current_rsi > 70:
-        return "RİSKLİ (RSI Şişik)", "orange", f"RSI {current_rsi:.0f} seviyesinde, düzeltme gelebilir."
-        
-    # 2. Haber Vetosusu
-    if riskiest_news and sentiment_score < 0:
-        return "SAT / UZAK DUR", "red", f"Riskli haber tespit edildi: '{riskiest_news['title']}'."
+    if current_rsi > 70: return "RİSKLİ", "orange", f"RSI {current_rsi:.0f} (Aşırı Alım)"
+    if riskiest_news and sentiment_score < 0: return "SAT / UZAK DUR", "red", "Riskli Haber Var"
 
-    # 3. Trend Kararı
-    if price_change_pct > 0.1:
-        if sentiment_score > 0: # Haber de biraz pozitifse yeter
-            return "AL (Fırsat)", "green", f"Model %{price_change_pct:.2f} yükseliş öngörüyor."
-        else:
-            return "AL (Riskli)", "blue", "Model yükseliş bekliyor ama haberler desteklemiyor."
-
-    elif price_change_pct < -0.1:
-        return "SAT", "red", f"Model %{price_change_pct:.2f} düşüş öngörüyor."
+    # Eşiği LSTM için hassas tutalım (0.1 ideal)
+    if change_pct > 0.1:
+        if sentiment_score > 0: return "GÜÇLÜ AL 🚀", "green", f"Model %{change_pct:.2f} Artış Bekliyor"
+        else: return "AL (Teknik)", "blue", "Yükseliş Beklentisi"
+    elif change_pct < -0.1:
+        return "SAT", "red", "Düşüş Beklentisi"
         
-    return decision, color, explanation
+    return "İZLE / NÖTR", "gray", "Yatay Seyir Beklentisi"
