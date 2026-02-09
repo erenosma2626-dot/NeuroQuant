@@ -160,7 +160,7 @@ def ask_gemini(ticker, price, rsi, macd_signal, decision, news_list, sentiment_s
 
         # 2. Modeli Hazırla
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-2.0-flash') 
+        model = genai.GenerativeModel('gemini-1.5-pro')
 
         # 3. Haberleri Özetle (İlk 3 başlığı alalım ki model boğulmasın)
         news_summary = "Henüz güncel haber yok."
