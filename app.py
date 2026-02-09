@@ -104,21 +104,66 @@ def main():
                 with tab3:
                     # Yeni Haber Kartları (AI Puanlı)
                     ui.render_news_cards(news_list)
-                    st.markdown("---")
-                    st.subheader("📥 Analiz Çıktısı")
+                    
+                # --- GÜNCELLEME BİTTİ ---
+
+                # --- SİNYAL ÖZET TABLOSU (Auto-Interpreter) ---
+                st.markdown("---")
+                st.subheader("🤖 Algoritmik Sinyal Özeti")
+                
+                # En son verileri alalım
+                last_rsi = df['RSI'].iloc[-1]
+                last_macd = df['MACD'].iloc[-1]
+                last_macd_signal = df['MACD_Signal'].iloc[-1]
+                last_close = df['Close'].iloc[-1]
+                last_bb_upper = df['BB_Upper'].iloc[-1]
+                last_bb_lower = df['BB_Lower'].iloc[-1]
+                
+                # 1. RSI Yorumu
+                if last_rsi < 30:
+                    rsi_signal = "🟢 GÜÇLÜ AL (Aşırı Satım)"
+                elif last_rsi > 70:
+                    rsi_signal = "🔴 GÜÇLÜ SAT (Aşırı Alım)"
+                else:
+                    rsi_signal = "⚪ NÖTR"
+                    
+                # 2. MACD Yorumu
+                if last_macd > last_macd_signal:
+                    macd_signal = "🟢 AL (Pozitif Trend)"
+                else:
+                    macd_signal = "🔴 SAT (Negatif Trend)"
+                    
+                # 3. Bollinger Yorumu
+                if last_close > last_bb_upper:
+                    bb_signal = "🔴 SAT (Fiyat Çok Yüksek)"
+                elif last_close < last_bb_lower:
+                    bb_signal = "🟢 AL (Fiyat Çok Düşük)"
+                else:
+                    bb_signal = "⚪ NÖTR (Bant İçinde)"
+
+                # Tabloyu Oluştur
+                signal_data = {
+                    "İndikatör": ["RSI (Momentum)", "MACD (Trend)", "Bollinger (Volatilite)"],
+                    "Değer": [f"{last_rsi:.2f}", f"{last_macd:.2f}", f"{last_close:.2f}"],
+                    "Yapay Zeka Sinyali": [rsi_signal, macd_signal, bb_signal]
+                }
+                st.table(pd.DataFrame(signal_data))
+                # ----------------------------------------------
+
+                st.markdown("---")
+                st.subheader("📥 Analiz Çıktısı")
                 
                     # Veriyi CSV formatına çeviriyoruz (Risk yok, sadece format değişiyor)
-                    csv_data = df.to_csv().encode('utf-8')
+                csv_data = df.to_csv().encode('utf-8')
                     
-                    st.download_button(
-                        label="💾 Tüm Verileri ve İndikatörleri İndir (Excel/CSV)",
-                        data=csv_data,
-                        file_name=f"{ticker}_analiz_verisi.csv",
-                        mime='text/csv',
-                        use_container_width=True
-                    )
+                st.download_button(
+                    label="💾 Tüm Verileri ve İndikatörleri İndir (Excel/CSV)",
+                    data=csv_data,
+                    file_name=f"{ticker}_analiz_verisi.csv",
+                    mime='text/csv',
+                    use_container_width=True
+                )
                 
-                # --- GÜNCELLEME BİTTİ ---
 
             except Exception as e:
                 st.error(f"Bir hata oluştu: {e}")
