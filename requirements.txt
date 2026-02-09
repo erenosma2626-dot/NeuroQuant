@@ -2,7 +2,7 @@ streamlit
 pandas
 numpy
 yfinance
-scikit-learn
+scikit-learn==1.5.2
 tensorflow
 plotly
 feedparser
@@ -10,4 +10,4 @@ requests
 transformers
 torch
 joblib
-google-generativeai
+google-generativeai==0.8.3
