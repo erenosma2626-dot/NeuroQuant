@@ -79,25 +79,25 @@ def main():
                     # Yeni Hacim ve RSI Grafikleri
                     ui.render_technical_charts(df)
                 
-                # --- EKLENEN KISIM: Yeni Grafikler ---
-                with st.expander("📊 Gelişmiş Teknik Analiz (Bollinger & MACD)", expanded=True):
-                    # 1. Bollinger Grafiği
-                    st.caption("Bollinger Bantları (Volatilite)")
-                    fig_bb = go.Figure()
-                    fig_bb.add_trace(go.Scatter(x=df.index, y=df['BB_Upper'], name='Üst Bant', line=dict(color='gray', width=1, dash='dot')))
-                    fig_bb.add_trace(go.Scatter(x=df.index, y=df['BB_Lower'], name='Alt Bant', line=dict(color='gray', width=1, dash='dot'), fill='tonexty'))
-                    fig_bb.add_trace(go.Scatter(x=df.index, y=df['Close'], name='Fiyat', line=dict(color='blue', width=2)))
-                    fig_bb.update_layout(height=300, margin=dict(l=0,r=0,t=0,b=0))
-                    st.plotly_chart(fig_bb, use_container_width=True)
-                    
-                    # 2. MACD Grafiği
-                    st.caption("MACD (Trend Yönü)")
-                    fig_macd = go.Figure()
-                    fig_macd.add_trace(go.Scatter(x=df.index, y=df['MACD'], name='MACD', line=dict(color='green')))
-                    fig_macd.add_trace(go.Scatter(x=df.index, y=df['MACD_Signal'], name='Sinyal', line=dict(color='red')))
-                    fig_macd.update_layout(height=200, margin=dict(l=0,r=0,t=0,b=0))
-                    st.plotly_chart(fig_macd, use_container_width=True)
-               # -------------------------------------
+                    # --- EKLENEN KISIM: Yeni Grafikler ---
+                    with st.expander("📊 Gelişmiş Teknik Analiz (Bollinger & MACD)", expanded=True):
+                        # 1. Bollinger Grafiği
+                        st.caption("Bollinger Bantları (Volatilite)")
+                        fig_bb = go.Figure()
+                        fig_bb.add_trace(go.Scatter(x=df.index, y=df['BB_Upper'], name='Üst Bant', line=dict(color='gray', width=1, dash='dot')))
+                        fig_bb.add_trace(go.Scatter(x=df.index, y=df['BB_Lower'], name='Alt Bant', line=dict(color='gray', width=1, dash='dot'), fill='tonexty'))
+                        fig_bb.add_trace(go.Scatter(x=df.index, y=df['Close'], name='Fiyat', line=dict(color='blue', width=2)))
+                        fig_bb.update_layout(height=300, margin=dict(l=0,r=0,t=0,b=0))
+                        st.plotly_chart(fig_bb, use_container_width=True)
+                        
+                        # 2. MACD Grafiği
+                        st.caption("MACD (Trend Yönü)")
+                        fig_macd = go.Figure()
+                        fig_macd.add_trace(go.Scatter(x=df.index, y=df['MACD'], name='MACD', line=dict(color='green')))
+                        fig_macd.add_trace(go.Scatter(x=df.index, y=df['MACD_Signal'], name='Sinyal', line=dict(color='red')))
+                        fig_macd.update_layout(height=200, margin=dict(l=0,r=0,t=0,b=0))
+                        st.plotly_chart(fig_macd, use_container_width=True)
+                # -------------------------------------
                     
                 with tab3:
                     # Yeni Haber Kartları (AI Puanlı)
