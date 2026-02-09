@@ -13,9 +13,28 @@ st.set_page_config(page_title="NeuroQuant v2.0", page_icon="🧠", layout="wide"
 
 def main():
     # 1. Kenar Çubuğunu Çiz ve Girdileri Al
-    ticker, is_clicked = ui.render_sidebar()
+    ticker, btn_press = ui.render_sidebar()
 
-    st.write(f"🛑 DEBUG MODU - Buton Durumu: {is_clicked}")
+    # 2. HAFIZA SİSTEMİ (Köprü Kuruyoruz)
+    # Eğer hafıza kutusu yoksa oluştur
+    if 'analiz_aktif' not in st.session_state:
+        st.session_state['analiz_aktif'] = False
+
+    # Eğer butona basıldıysa hafızayı 'AÇIK' yap
+    if btn_press:
+        st.session_state['analiz_aktif'] = True
+    
+    # Eğer kullanıcı hisseyi değiştirirse analizi kapat (Yeniden başlatabilsin)
+    if 'son_hisse' not in st.session_state: st.session_state['son_hisse'] = ticker
+    if ticker != st.session_state['son_hisse']:
+        st.session_state['analiz_aktif'] = False
+        st.session_state['son_hisse'] = ticker
+
+    # 3. SİHİRLİ DOKUNUŞ:
+    # Artık is_clicked değişkeni, anlık butona değil, HAFIZAYA bağlı.
+    # Böylece sayfa yenilense bile True kalır!
+    is_clicked = st.session_state['analiz_aktif']
+
 
     with st.expander("ℹ️ Proje Amacı ve Yasal Uyarı (Lütfen Okuyunuz)", expanded=False):
         st.markdown("""
