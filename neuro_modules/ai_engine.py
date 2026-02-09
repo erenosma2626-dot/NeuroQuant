@@ -12,6 +12,7 @@ import pandas as pd
 import joblib
 from tensorflow.keras.models import load_model
 from transformers import pipeline
+import google.generativeai as genai
 
 # --- AYARLAR ---
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -140,3 +141,57 @@ def make_final_decision(preds, sentiment_score, riskiest_news, current_rsi):
         return "SAT", "red", "Düşüş Beklentisi"
         
     return "İZLE / NÖTR", "gray", "Yatay Seyir Beklentisi"
+
+
+
+def ask_gemini(ticker, price, rsi, macd_signal, decision, news_list, sentiment_score):
+    """
+    Gemini Pro'ya HEM TEKNİK HEM HABER verilerini gönderip hibrit yorum ister.
+    """
+    try:
+        # 1. API Anahtarını Al
+        import streamlit as st
+        import google.generativeai as genai
+        
+        if "GEMINI_API_KEY" in st.secrets:
+            api_key = st.secrets["GEMINI_API_KEY"]
+        else:
+            return "⚠️ Hata: Streamlit Secrets içinde 'GEMINI_API_KEY' bulunamadı."
+
+        # 2. Modeli Hazırla
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel('gemini-2.0-flash') 
+
+        # 3. Haberleri Özetle (İlk 3 başlığı alalım ki model boğulmasın)
+        news_summary = "Henüz güncel haber yok."
+        if news_list:
+            titles = [f"- {n.get('title', '')}" for n in news_list[:3]]
+            news_summary = "\n".join(titles)
+
+        # 4. Soruyu Hazırla (Prompt Engineering - Hibrit Analiz)
+        prompt = f"""
+        Sen profesyonel bir finansal stratejistsin. Aşağıdaki verileri birleştirerek {ticker} için bir analiz yaz.
+        
+        A) TEKNİK GÖSTERGELER:
+        - Fiyat: {price}
+        - RSI: {rsi:.2f} (30 altı aşırı satım, 70 üstü aşırı alım)
+        - MACD Durumu: {macd_signal}
+        - Algoritma Kararı: {decision}
+        
+        B) TEMEL ANALİZ (HABERLER & DUYGU):
+        - Piyasa Duygusu Skoru: {sentiment_score:.2f} (-1 Negatif, +1 Pozitif)
+        - Son Başlıklar:
+        {news_summary}
+        
+        GÖREVİN:
+        Teknik veriler ile haber akışını kıyasla. Örneğin teknik "AL" derken haberler "KÖTÜ" ise bu bir tuzak mı?
+        Yoksa ikisi de birbirini destekliyor mu?
+        Yatırım tavsiyesi vermeden, riskleri ve fırsatları 3-4 cümleyle, akıcı bir Türkçe ile anlat.
+        """
+
+        # 5. Cevabı Al
+        response = model.generate_content(prompt)
+        return response.text
+
+    except Exception as e:
+        return f"Üzgünüm, Gemini şu an yanıt veremiyor. Hata: {str(e)}"

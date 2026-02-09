@@ -148,6 +148,30 @@ def main():
                     "Yapay Zeka Sinyali": [rsi_signal, macd_signal, bb_signal]
                 }
                 st.table(pd.DataFrame(signal_data))
+                
+
+                # ----------------------------------------------
+                st.markdown("---")
+                st.subheader("✨ Yapay Zeka Yorumu (Teknik + Haberler)")
+                
+                if st.button("🤖 Piyasayı Yorumla (Gemini)"):
+                    with st.spinner("Gemini teknik verileri ve haberleri sentezliyor..."):
+                        # Fonksiyonu YENİ parametrelerle çağırıyoruz
+                        ai_comment = ai_engine.ask_gemini(
+                            ticker, 
+                            last_close, 
+                            last_rsi, 
+                            macd_signal, 
+                            decision,
+                            news_list,      # <-- Yeni eklendi: Haber Listesi
+                            avg_sentiment   # <-- Yeni eklendi: Duygu Skoru
+                        )
+                        
+                        # Sonucu Göster
+                        st.info(ai_comment)
+                        st.caption("Not: Bu yorum Google Gemini yapay zekası tarafından oluşturulmuştur.")
+                # ------------------------------------------
+                
                 # ----------------------------------------------
 
                 st.markdown("---")
