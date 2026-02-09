@@ -15,22 +15,7 @@ def main():
     # 1. Kenar Çubuğunu Çiz ve Girdileri Al
     ticker, is_clicked = ui.render_sidebar()
 
-
-    #---------------------------------------------------------------------------
-    if 'analiz_aktif' not in st.session_state:
-        st.session_state['analiz_aktif'] = False
-        st.session_state['secilen_ticker'] = ""
-
-    # 2. Eğer "Analizi Başlat" butonuna basıldıysa hafızayı GÜNCELLE
-    if is_clicked:
-        st.session_state['analiz_aktif'] = True
-        st.session_state['secilen_ticker'] = ticker
-    
-    # 3. Eğer kullanıcı hisseyi değiştirdiyse ama butona basmadıysa analizi kapat (Kafa karışıklığı olmasın)
-    if ticker != st.session_state['secilen_ticker']:
-        st.session_state['analiz_aktif'] = False
-    #---------------------------------------------------------------------------
-
+    st.write(f"🛑 DEBUG MODU - Buton Durumu: {is_clicked}")
 
     with st.expander("ℹ️ Proje Amacı ve Yasal Uyarı (Lütfen Okuyunuz)", expanded=False):
         st.markdown("""
