@@ -6,7 +6,7 @@
 
 **NeuroQuant**, finansal piyasalardaki "duygusal kararları" minimize etmek ve matematiksel bir bakış açısı sunmak için geliştirilmiş, **Hibrit (Teknik + Temel)** bir yapay zeka asistanıdır.
 
-🔗 **Canlı Demo:** [NeuroQuant App](https://share.streamlit.io/) *(Linkini buraya yapıştır)*
+🔗 **Canlı Demo:** https://neuroquant-s37f6vuhtauzpcqhf3kgfh.streamlit.app
 
 ---
 
