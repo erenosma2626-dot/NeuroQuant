@@ -104,6 +104,19 @@ def main():
                 with tab3:
                     # Yeni Haber Kartları (AI Puanlı)
                     ui.render_news_cards(news_list)
+                    st.markdown("---")
+                    st.subheader("📥 Analiz Çıktısı")
+                
+                    # Veriyi CSV formatına çeviriyoruz (Risk yok, sadece format değişiyor)
+                    csv_data = df.to_csv().encode('utf-8')
+                    
+                    st.download_button(
+                        label="💾 Tüm Verileri ve İndikatörleri İndir (Excel/CSV)",
+                        data=csv_data,
+                        file_name=f"{ticker}_analiz_verisi.csv",
+                        mime='text/csv',
+                        use_container_width=True
+                    )
                 
                 # --- GÜNCELLEME BİTTİ ---
 
