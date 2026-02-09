@@ -2,7 +2,7 @@ import yfinance as yf
 import pandas as pd
 import numpy as np
 
-def get_rich_market_data(ticker="NVDA", period="param_period", interval="param_interval"):
+def get_rich_market_data(ticker="NVDA", period=param_period, interval=param_interval):
     """
     Belirtilen hisse için OHLCV verisini çeker ve Teknik İndikatörleri (RSI, MACD) ekler.
     
