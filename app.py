@@ -15,6 +15,15 @@ def main():
     # 1. Kenar Çubuğunu Çiz ve Girdileri Al
     ticker, is_clicked = ui.render_sidebar()
     
+    if 'analiz_aktif' not in st.session_state:
+        st.session_state['analiz_aktif'] = False
+
+    # Eğer butona basıldıysa, hafızayı "True" yap.
+    if is_clicked:
+        st.session_state['analiz_aktif'] = True
+    # --------------------------------------
+
+
     with st.expander("ℹ️ Proje Amacı ve Yasal Uyarı (Lütfen Okuyunuz)", expanded=False):
         st.markdown("""
         ### 🧠 NeuroQuant Nedir?
