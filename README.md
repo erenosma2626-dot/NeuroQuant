@@ -1,81 +1,58 @@
-# 🧠 NeuroQuant: AI-Powered Algorithmic Trading Bot
+# 🧠 NeuroQuant: Honest AI Financial Forecasting
 
-![Python](https://img.shields.io/badge/Python-3.10-blue?style=for-the-badge&logo=python)
-![TensorFlow](https://img.shields.io/badge/TensorFlow-2.x-orange?style=for-the-badge&logo=tensorflow)
-![Pandas](https://img.shields.io/badge/Pandas-Data_Analysis-150458?style=for-the-badge&logo=pandas)
-![Status](https://img.shields.io/badge/Status-Phase_1_Completed-green?style=for-the-badge)
+![Python](https://img.shields.io/badge/Python-3.10%2B-blue)
+![TensorFlow](https://img.shields.io/badge/TensorFlow-LSTM-orange)
+![Status](https://img.shields.io/badge/Status-Live-success)
 
-**NeuroQuant**, finansal piyasalardaki karmaşık veri örüntülerini çözmek için tasarlanmış uçtan uca (end-to-end) bir Yapay Zeka projesidir. Geleneksel teknik analizi, **Derin Öğrenme (LSTM)** ve **Doğal Dil İşleme (NLP/Sentiment Analysis)** ile birleştirerek hibrit bir karar mekanizması oluşturmayı hedefler.
+**NeuroQuant**, finansal piyasalardaki "duygusal kararları" minimize etmek ve matematiksel bir bakış açısı sunmak için geliştirilmiş, **Hibrit (Teknik + Temel)** bir yapay zeka asistanıdır.
 
-
----
-
-## 🛠️ Kullanılan Teknolojiler ve Araçlar
-
-Bu projede modern veri bilimi ve yapay zeka kütüphaneleri kullanılmıştır:
-
-* **Veri Toplama:** `yfinance` (Yahoo Finance API)
-* **Veri İşleme & Manipülasyon:** `pandas`, `numpy`
-* **Görselleştirme:** `matplotlib`
-* **Derin Öğrenme (Deep Learning):** `tensorflow`, `keras` (LSTM Katmanları)
-* **Veri Ölçeklendirme:** `scikit-learn` (MinMaxScaler)
-* **Geliştirme Ortamı:** Google Colab / Jupyter Notebook
+🔗 **Canlı Demo:** [NeuroQuant App](https://share.streamlit.io/) *(Linkini buraya yapıştır)*
 
 ---
 
-## ⚙️ Metodoloji
+## 🎯 Projenin Amacı ve Felsefesi
 
-Proje, **CRISP-DM** (Cross-Industry Standard Process for Data Mining) döngüsüne sadık kalınarak şu adımlarla geliştirilmiştir:
+Çoğu finansal yapay zeka projesi, "zengin olma" vaadiyle sunulur. NeuroQuant'ın amacı bu değildir.
+Amacımız: **Yatırımcının gözünden kaçan teknik desenleri ve binlerce haberi saniyeler içinde tarayıp, rasyonel bir "İkinci Görüş" sunmaktır.**
 
-### 1. Veri Madenciliği (Data Mining)
-Geçmişe dönük 5+ yıllık hisse senedi verileri (Açılış, Yüksek, Düşük, Kapanış, Hacim) çekildi. Veri setinin tutarlılığı kontrol edildi ve eksik veriler temizlendi.
+### 🚨 Neden Farklı? (The "No-Cheating" Policy)
+Birçok borsa botu, eğitim sırasında gelecekteki verileri yanlışlıkla görerek (**Data Leakage**) "Mükemmel" sonuçlar üretir ama gerçek hayatta çuvallar.
 
-### 2. Öznitelik Mühendisliği (Feature Engineering)
-Modelin sadece fiyata bakarak değil, piyasa dinamiklerini anlayarak öğrenmesi için veriye Teknik İndikatörler eklendi:
-* **RSI (Relative Strength Index):** Aşırı alım/satım bölgelerini tespiti.
-* **MACD:** Trend dönüşümlerinin tespiti.
-* **Bollinger Bands:** Volatilite ölçümü.
-
-### 3. Ön İşleme (Preprocessing)
-* **Scaling:** LSTM modellerinin performansı için veriler `MinMaxScaler` ile 0-1 aralığına sıkıştırıldı.
-* **Windowing (Pencereleme):** Zaman serisi verisi, son 60 günü (Lookback) girdi olarak alıp, bir sonraki günü tahmin edecek şekilde (X, y) matrislerine dönüştürüldü.
-
-### 4. Model Mimarisi (LSTM)
-Zaman serilerindeki uzun vadeli bağımlılıkları öğrenmesi için **LSTM (Long Short-Term Memory)** mimarisi seçildi.
-* **LSTM Layers:** Geçmiş verideki patternleri ezberlemek yerine öğrenmek için.
-* **Dropout (%20):** Overfitting (Aşırı öğrenme) riskini önlemek için rastgele nöron kapatma.
-* **Dense Layer:** Sonuç çıktısını tek bir fiyat tahminine indirgemek için.
-
-### 5. Strateji ve Backtest
-Modelin ham fiyat tahminleri, bir **"Threshold (Eşik)"** algoritmasından geçirildi. Sadece belirli bir güven aralığını (%0.5 - %1.0) aşan değişimlerde **AL/SAT** sinyali üretilmesi sağlanarak gürültü (noise) engellendi.
+NeuroQuant, **"Zaman Duvarı" (Time-Wall)** mimarisiyle eğitilmiştir:
+* Model, eğitim sırasında 2026 verilerini ASLA görmemiştir.
+* Backtest sonuçları, modelin *körlemesine* girdiği, hiç bilmediği bir piyasa simülasyonudur.
+* Bu yüzden grafikler "kusursuz" değil, **"gerçekçi ve dürüsttür".**
 
 ---
 
-## 📅 Proje Yol Haritası
+## 📊 Performans (Backtest)
 
-Şu anda projenin **2. Adımdayız** ve temel teknik analiz motorunu tamamladık.
+Aşağıdaki grafik, modelin hiç görmediği son 3 aylık piyasa verisindeki performansıdır. Model (Yeşil), piyasa trendlerini (Gri) önceden yakalamaya çalışır.
 
-* ✅ **Adım 1:** Veri Madenciliği, Temizlik ve Görselleştirme.
-* ✅ **Adım 2:** LSTM Modellemesi, Eğitim ve Strateji Backtest'i.
-* 🚧 **Adım 3 (Sırada):** Sentiment Analizi (Finansal Haberlerin NLP ile işlenmesi).
-* ⏳ **Adım 4:** Entegrasyon, Otomasyon ve Final Canlı Test.
+![Backtest Sonucu](assets/backtest_result.png)
 
 ---
 
-## 📊 Sonuçlar (Şimdilik)
+## 🧠 Teknik Özellikler
 
-**LSTM Modeli Performansı (Notebook 3):**
-* **Market Getirisi (Buy & Hold):** x1.68
-* **NeuroQuant Stratejisi:** x1.52 (Daha düşük risk profili ile)
-* **Not:** Model, özellikle düşüş trendlerinde nakite geçerek portföyü koruma ("Stop-Loss" etkisi) konusunda başarılı olmuştur.
+1.  **LSTM (Long Short-Term Memory):** Fiyatların sadece sayısal değerine değil, son 60 gündeki *hareket sırasına* bakar.
+2.  **Universal Scaling:** Model tek bir hisseye (Overfitting) değil, "Yüzdesel Değişim" mantığına odaklanır. Böylece NVDA öğrendiği desenleri BTC üzerinde de uygulayabilir.
+3.  **FinBERT Duygu Analizi:** Teknik analiz "AL" dese bile, piyasada "Kötü Haber" (Savaş, Kriz vb.) varsa yapay zeka işlemi **Veto Eder.**
 
 ---
 
-## 🚀 Kurulum ve Çalıştırma
+## ⚠️ YASAL UYARI (DISCLAIMER)
 
-1.  Repoyu klonlayın.
-2.  Gerekli kütüphaneleri yükleyin:
-    ```bash
-    pip install pandas numpy matplotlib tensorflow scikit-learn yfinance
-    ```
-3.  Notebookları sırasıyla çalıştırın (`01` -> `02` -> `03`).
+**Lütfen Dikkatle Okuyunuz:**
+
+Bu proje, açık kaynak kodlu bir eğitim ve araştırma projesidir. Burada sunulan veriler, tahminler ve analizler **KESİNLİKLE YATIRIM TAVSİYESİ DEĞİLDİR.**
+
+* Yapay zeka modelleri geçmiş verilere dayanır ve geleceği garanti edemez.
+* Finansal piyasalar yüksek risk içerir; paranızın tamamını kaybedebilirsiniz.
+* Bu aracı kullanarak aldığınız kararların sorumluluğu tamamen size aittir.
+
+---
+*Developed with ❤️ & 🧠 by Eren Osma
+
+
+Not: Bu projenin geliştirme süreçlerinde kodlama asistanı olarak Yapay Zeka araçlarından faydalanılmıştır.
