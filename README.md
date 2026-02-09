@@ -2,7 +2,8 @@
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue)
 ![TensorFlow](https://img.shields.io/badge/TensorFlow-LSTM-orange)
-![Status](https://img.shields.io/badge/Status-Live-success)
+![Gemini AI](https://img.shields.io/badge/AI-Gemini%20Flash%203.0-purple)
+![Status](https://img.shields.io/badge/Status-v2.0_Live-success)
 
 **NeuroQuant**, finansal piyasalardaki "duygusal kararları" minimize etmek ve matematiksel bir bakış açısı sunmak için geliştirilmiş, **Hibrit (Teknik + Temel)** bir yapay zeka asistanıdır.
 
@@ -39,6 +40,17 @@ Aşağıdaki grafik, modelin hiç görmediği son 3 aylık piyasa verisindeki pe
 2.  **Universal Scaling:** Model tek bir hisseye (Overfitting) değil, "Yüzdesel Değişim" mantığına odaklanır. Böylece NVDA öğrendiği desenleri BTC üzerinde de uygulayabilir.
 3.  **FinBERT Duygu Analizi:** Teknik analiz "AL" dese bile, piyasada "Kötü Haber" (Savaş, Kriz vb.) varsa yapay zeka işlemi **Veto Eder.**
 
+### 📊 Gelişmiş Teknik Göstergeler
+* **Bollinger Bantları & MACD:** Fiyatın oynaklığını ve trendin yönünü profesyonel seviyede takip edin.
+* **Session State Hafızası:** Analizleriniz arasında geçiş yaparken verileriniz asla kaybolmaz, kesintisiz bir deneyim sunar.
+* **Veri Export:** Yapılan tüm analizleri ve ham verileri tek tıkla CSV formatında indirebilirsiniz.
+
+### 🤖 Gemini AI - Akıllı Finansal Yorumcu
+Sadece grafik çizmekle kalmıyoruz; Google'ın en güncel **Gemini 3.0 Flash Preview** modelini kullanarak tüm teknik ve temel verileri bir potada eritiyoruz.
+* **Teknik Füzyon:** RSI, MACD ve Bollinger bantlarından gelen sinyalleri insan diline çevirir.
+* **Haber Analizi:** Piyasadaki haber akışını tarayarak riskleri ve fırsatları sentezler.
+* **Kişiselleştirilmiş Özet:** "Neden AL?" veya "Neden SAT?" sorularına mantıklı, veriye dayalı cevaplar verir.
+
 ---
 
 ## ⚠️ YASAL UYARI (DISCLAIMER)
@@ -52,7 +64,7 @@ Bu proje, açık kaynak kodlu bir eğitim ve araştırma projesidir. Burada sunu
 * Bu aracı kullanarak aldığınız kararların sorumluluğu tamamen size aittir.
 
 ---
-*Developed with ❤️ & 🧠 by Eren Osma
+*Developed by Eren Osma
 
 
 Not: Bu projenin geliştirme süreçlerinde kodlama asistanı olarak Yapay Zeka araçlarından faydalanılmıştır.
