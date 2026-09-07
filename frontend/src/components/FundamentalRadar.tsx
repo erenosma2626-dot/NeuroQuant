@@ -1,6 +1,5 @@
 import React from 'react';
 import type { FundamentalsData } from '../types';
-import { PieChart, AlertCircle, Calendar } from 'lucide-react';
 
 interface FundamentalRadarProps {
   data: FundamentalsData;
@@ -9,140 +8,149 @@ interface FundamentalRadarProps {
 export const FundamentalRadar: React.FC<FundamentalRadarProps> = ({ data }) => {
   if (!data.is_equity) {
     return (
-      <div className="card" style={{ padding: '1.75rem 2rem' }}>
-        <div className="card-header">
-          <div className="card-title-group">
-            <h2 className="card-title">
-              <PieChart size={19} color="var(--accent-sky)" />
-              Temel Değerleme & Çarpan Radarı
-            </h2>
-            <p className="card-subtitle">Varlık sınıfına göre değerleme yaklaşımı.</p>
+      <div className="panel" style={{ borderTop: '2px solid var(--ink-secondary)' }}>
+        <div style={{ padding: '1rem 2rem', borderBottom: '2px solid var(--ink-primary)' }}>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', fontWeight: 700, fontStyle: 'italic', color: 'var(--ink-primary)' }}>
+            Temel Değerleme &amp; Bilanço Radarı
           </div>
+          <div style={{ fontSize: '0.72rem', color: 'var(--ink-secondary)', marginTop: 2 }}>Varlık sınıfına göre değerleme yaklaşımı</div>
         </div>
-        <div style={{ padding: '2.5rem 1.5rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-          <AlertCircle size={32} color="var(--accent-amber)" style={{ margin: '0 auto 12px' }} />
-          <h3 style={{ color: '#FFFFFF', marginBottom: 6, fontSize: '1.1rem' }}>Kripto / Emtia Rejimi</h3>
-          <p style={{ fontSize: '0.88rem', maxWidth: 480, margin: '0 auto', color: 'var(--text-secondary)' }}>
-            {data.ticker} için geleneksel hisse senedi çarpanları (F/K, F/DD) uygulanmaz. Model bunun yerine on-chain akış, volatilite ve sektörel korelasyona odaklanır.
+        <div style={{ padding: '3rem 2rem', textAlign: 'center', color: 'var(--ink-secondary)' }}>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', fontWeight: 700, fontStyle: 'italic', color: 'var(--ink-primary)', marginBottom: 8 }}>
+            Kripto / Emtia Rejimi
+          </div>
+          <p style={{ fontSize: '0.85rem', maxWidth: 460, margin: '0 auto', lineHeight: 1.65 }}>
+            {data.ticker} için geleneksel hisse senedi çarpanları (F/K, F/DD) uygulanmaz.
+            Model bunun yerine on-chain akış, volatilite ve sektörel korelasyona odaklanır.
           </p>
         </div>
       </div>
     );
   }
 
-  const isCheap = data.valuation_score >= 65;
+  const isCheap    = data.valuation_score >= 65;
   const isExpensive = data.valuation_score <= 40;
 
-  return (
-    <div className="card" style={{ padding: '1.75rem 2rem' }}>
-      <div className="card-header">
-        <div className="card-title-group">
-          <h2 className="card-title">
-            <PieChart size={19} color="var(--accent-sky)" />
-            Temel Değerleme & Bilanço Radarı
-          </h2>
-          <p className="card-subtitle">
-            Hissenin tarihsel çarpanları ve akran grubuna göre ucuzluk/pahallılık skoru.
-          </p>
-        </div>
+  const MultiplePill = ({ label, value }: { label: string; value: string }) => (
+    <div style={{
+      padding: '1rem 1.25rem',
+      background: 'var(--paper-elevated)',
+      borderBottom: '1px solid var(--rule-hairline)',
+    }}>
+      <div style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-muted)', marginBottom: 6 }}>
+        {label}
+      </div>
+      <div className="tabular" style={{ fontFamily: 'var(--font-display)', fontSize: '1.35rem', fontWeight: 700, color: 'var(--ink-primary)' }}>
+        {value}
+      </div>
+    </div>
+  );
 
-        <span
-          className={`tag ${isCheap ? 'tag-bull' : isExpensive ? 'tag-bear' : 'tag-accent'}`}
-          style={{ fontSize: '0.8rem', padding: '3px 10px', fontWeight: 700 }}
-        >
+  return (
+    <div className="panel" style={{ borderTop: '2px solid var(--ink-secondary)' }}>
+      {/* Header */}
+      <div style={{
+        padding: '1rem 2rem',
+        borderBottom: '2px solid var(--ink-primary)',
+        display: 'flex',
+        alignItems: 'flex-start',
+        justifyContent: 'space-between',
+      }}>
+        <div>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', fontWeight: 700, fontStyle: 'italic', color: 'var(--ink-primary)' }}>
+            Temel Değerleme &amp; Bilanço Radarı
+          </div>
+          <div style={{ fontSize: '0.72rem', color: 'var(--ink-secondary)', marginTop: 2 }}>
+            Tarihsel çarpanlar ve akran grubuna göre ucuzluk/pahalılık skoru
+          </div>
+        </div>
+        <span className={`signal ${isCheap ? 'signal-buy' : isExpensive ? 'signal-sell' : 'signal-cobalt'}`}>
           {data.valuation_status}
         </span>
       </div>
 
-      {/* 4 Ana Çarpan Kutusu */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
-        <div className="metric-pill">
-          <div className="metric-pill-label">F/K (Trailing P/E)</div>
-          <div className="metric-pill-val tabular" style={{ color: '#FFFFFF' }}>
-            {data.trailing_pe ? data.trailing_pe.toFixed(2) : '—'}
-          </div>
-        </div>
+      {/* 4 Multiples in 2×2 grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1px', background: 'var(--rule-hairline)' }}>
+        <MultiplePill label="F/K Trailing (P/E)" value={data.trailing_pe ? data.trailing_pe.toFixed(2) : '—'} />
+        <MultiplePill label="İleri F/K (Forward P/E)" value={data.forward_pe ? data.forward_pe.toFixed(2) : '—'} />
+        <MultiplePill label="F/DD (Price / Book)" value={data.price_to_book ? data.price_to_book.toFixed(2) : '—'} />
+        <MultiplePill label="PEG Oranı" value={data.peg_ratio ? data.peg_ratio.toFixed(2) : '—'} />
+      </div>
 
-        <div className="metric-pill">
-          <div className="metric-pill-label">İleri F/K (Forward P/E)</div>
-          <div className="metric-pill-val tabular" style={{ color: '#FFFFFF' }}>
-            {data.forward_pe ? data.forward_pe.toFixed(2) : '—'}
+      {/* Earnings De-Risking Block */}
+      <div style={{
+        padding: '1.25rem 2rem',
+        borderTop: '1px solid var(--rule-strong)',
+        background: 'rgba(146, 64, 14, 0.04)',
+        borderLeft: '3px solid var(--amber-warm)',
+        display: 'flex',
+        alignItems: 'flex-start',
+        justifyContent: 'space-between',
+        gap: '1rem',
+      }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: '0.62rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--amber-warm)', marginBottom: 6 }}>
+            Bilanço Koruma Kalkanı
           </div>
+          <p style={{ fontSize: '0.85rem', color: 'var(--ink-secondary)', lineHeight: 1.6 }}>
+            {data.earnings_regime}
+          </p>
         </div>
-
-        <div className="metric-pill">
-          <div className="metric-pill-label">F/DD (Price/Book)</div>
-          <div className="metric-pill-val tabular" style={{ color: '#FFFFFF' }}>
-            {data.price_to_book ? data.price_to_book.toFixed(2) : '—'}
+        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+          <div style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-muted)', marginBottom: 4 }}>
+            Sonraki Bilanço
           </div>
-        </div>
-
-        <div className="metric-pill">
-          <div className="metric-pill-label">PEG Oranı</div>
-          <div className="metric-pill-val tabular" style={{ color: '#FFFFFF' }}>
-            {data.peg_ratio ? data.peg_ratio.toFixed(2) : '—'}
+          <div className="tabular" style={{ fontWeight: 700, color: 'var(--amber-warm)', fontSize: '0.9rem' }}>
+            {data.days_to_earnings !== null ? `${data.days_to_earnings} Gün Kaldı` : 'Bekleniyor'}
           </div>
         </div>
       </div>
 
-      {/* Bilanço Rejimi İbresi */}
-      <div
-        style={{
-          padding: '1.25rem 1.5rem',
-          borderRadius: 'var(--radius-md)',
-          background: 'var(--bg-surface)',
-          border: '1px solid var(--border-subtle)',
-          marginBottom: '1.5rem',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.9rem', fontWeight: 600, color: '#FFFFFF' }}>
-            <Calendar size={17} color="var(--accent-amber)" />
-            <span>Bilanço Koruma Kalkanı (De-risking)</span>
-          </div>
-          <span className="tabular" style={{ fontSize: '0.85rem', color: 'var(--accent-amber)', fontWeight: 700 }}>
-            {data.days_to_earnings !== null ? `${data.days_to_earnings} Gün Kaldı` : 'Takvim Bekleniyor'}
-          </span>
-        </div>
-        <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-          {data.earnings_regime}
-        </p>
-      </div>
-
-      {/* Tarihsel Bilanço Sürprizleri */}
+      {/* Earnings History Table */}
       {data.earnings_history && data.earnings_history.length > 0 && (
         <div>
-          <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', marginBottom: 10 }}>
-            Tarihsel Bilanço & EPS Sürprizleri
-          </span>
-          <div className="screener-table-container">
-            <table className="screener-table">
-              <thead>
-                <tr>
-                  <th>Açıklanma Tarihi</th>
-                  <th>Beklenen EPS</th>
-                  <th>Açıklanan EPS</th>
-                  <th>Sürpriz Sapması</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.earnings_history.map((rec, i) => (
-                  <tr key={i} className="screener-row">
-                    <td className="tabular">{rec.date}</td>
-                    <td className="tabular">{rec.eps_estimate !== null ? `$${rec.eps_estimate.toFixed(2)}` : '—'}</td>
-                    <td className="tabular" style={{ fontWeight: 600, color: '#FFFFFF' }}>
-                      {rec.reported_eps !== null ? `$${rec.reported_eps.toFixed(2)}` : '—'}
-                    </td>
-                    <td>
-                      <span className={`tag ${(rec.surprise_pct || 0) >= 0 ? 'tag-bull' : 'tag-bear'} tabular`}>
-                        {rec.surprise_pct !== null ? `${rec.surprise_pct > 0 ? '+' : ''}%${rec.surprise_pct.toFixed(2)}` : '—'}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div style={{
+            padding: '0.6rem 2rem',
+            borderTop: '1px solid var(--rule-hairline)',
+            borderBottom: '1px solid var(--rule-hairline)',
+            fontSize: '0.62rem',
+            fontWeight: 600,
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            color: 'var(--ink-muted)',
+          }}>
+            Tarihsel EPS Sürprizleri
           </div>
+          <table className="screener-table" style={{ width: '100%' }}>
+            <thead>
+              <tr>
+                <th style={{ paddingLeft: '2rem' }}>Açıklanma</th>
+                <th>Beklenen EPS</th>
+                <th>Açıklanan EPS</th>
+                <th style={{ paddingRight: '2rem' }}>Sürpriz</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.earnings_history.map((rec, i) => (
+                <tr key={i}>
+                  <td className="tabular" style={{ paddingLeft: '2rem' }}>{rec.date}</td>
+                  <td className="tabular" style={{ color: 'var(--ink-secondary)' }}>
+                    {rec.eps_estimate !== null ? rec.eps_estimate.toFixed(2) : '—'}
+                  </td>
+                  <td className="tabular" style={{ fontWeight: 600, color: 'var(--ink-primary)' }}>
+                    {rec.reported_eps !== null ? rec.reported_eps.toFixed(2) : '—'}
+                  </td>
+                  <td style={{ paddingRight: '2rem' }}>
+                    <span className={`signal ${(rec.surprise_pct || 0) >= 0 ? 'signal-buy' : 'signal-sell'} tabular`}>
+                      {rec.surprise_pct !== null
+                        ? `${rec.surprise_pct > 0 ? '+' : ''}${rec.surprise_pct.toFixed(2)}%`
+                        : '—'}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>

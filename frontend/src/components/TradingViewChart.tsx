@@ -2,188 +2,183 @@ import React, { useEffect, useRef, useState } from 'react';
 import { createChart, ColorType, CandlestickSeries, LineSeries, HistogramSeries } from 'lightweight-charts';
 import type { IChartApi } from 'lightweight-charts';
 import type { MarketData } from '../types';
-import { Layers } from 'lucide-react';
 
 interface TradingViewChartProps {
   data: MarketData;
 }
 
 export const TradingViewChart: React.FC<TradingViewChartProps> = ({ data }) => {
-  const chartContainerRef = useRef<HTMLDivElement>(null);
-  const chartInstanceRef = useRef<IChartApi | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const chartRef     = useRef<IChartApi | null>(null);
 
-  const [showSMA50, setShowSMA50] = useState(true);
+  const [showSMA50,  setShowSMA50]  = useState(true);
   const [showSMA200, setShowSMA200] = useState(true);
-  const [showBB, setShowBB] = useState(false);
+  const [showBB,     setShowBB]     = useState(false);
 
   useEffect(() => {
-    if (!chartContainerRef.current) return;
+    if (!containerRef.current) return;
+    if (chartRef.current) { chartRef.current.remove(); chartRef.current = null; }
 
-    if (chartInstanceRef.current) {
-      chartInstanceRef.current.remove();
-      chartInstanceRef.current = null;
-    }
+    const container = containerRef.current;
 
-    const container = chartContainerRef.current;
     const chart = createChart(container, {
       layout: {
-        background: { type: ColorType.Solid, color: '#0B0E14' },
-        textColor: '#94A3B8',
+        background: { type: ColorType.Solid, color: '#FAF8F3' }, // paper-card
+        textColor: '#57534E',                                     // ink-secondary
         fontSize: 12,
-        fontFamily: "'Inter', monospace",
+        fontFamily: "'JetBrains Mono', 'Courier New', monospace",
       },
       grid: {
-        vertLines: { color: 'rgba(255, 255, 255, 0.03)' },
-        horzLines: { color: 'rgba(255, 255, 255, 0.03)' },
+        vertLines: { color: 'rgba(26, 21, 18, 0.05)' },
+        horzLines: { color: 'rgba(26, 21, 18, 0.05)' },
       },
       crosshair: {
-        vertLine: { color: '#0EA5E9', width: 1, style: 2 },
-        horzLine: { color: '#0EA5E9', width: 1, style: 2 },
+        vertLine: { color: '#1E3A8A', width: 1, style: 2 },
+        horzLine: { color: '#1E3A8A', width: 1, style: 2 },
       },
       timeScale: {
-        borderColor: 'rgba(255, 255, 255, 0.06)',
+        borderColor: '#DFD7C8',
         timeVisible: true,
         secondsVisible: false,
       },
       rightPriceScale: {
-        borderColor: 'rgba(255, 255, 255, 0.06)',
+        borderColor: '#DFD7C8',
+        scaleMargins: { top: 0.15, bottom: 0.12 },
       },
-      width: container.clientWidth,
-      height: 600,
+      width:  container.clientWidth,
+      height: 580,
     });
 
-    chartInstanceRef.current = chart;
+    chartRef.current = chart;
 
-    // 1. Mum Grafiği (Candlesticks)
+    // ── Candlesticks: Forest Green / Madder Red ──────────────────
     const candleSeries = chart.addSeries(CandlestickSeries, {
-      upColor: '#10B981',
-      downColor: '#F43F5E',
+      upColor:      '#14532D',   // forest-gain
+      downColor:    '#881337',   // madder-loss
       borderVisible: false,
-      wickUpColor: '#10B981',
-      wickDownColor: '#F43F5E',
+      wickUpColor:  '#166534',
+      wickDownColor:'#9F1239',
     });
     candleSeries.setData(data.candles as any);
 
-    // 2. SMA 50 Çizgisi
-    if (showSMA50 && data.sma50 && data.sma50.length > 0) {
-      const sma50Series = chart.addSeries(LineSeries, {
-        color: '#0EA5E9',
+    // ── SMA 50: Oxford Cobalt ────────────────────────────────────
+    if (showSMA50 && data.sma50?.length > 0) {
+      const s50 = chart.addSeries(LineSeries, {
+        color:     '#1E3A8A',
         lineWidth: 2,
-        title: 'SMA 50',
+        title:     'SMA 50',
       });
-      sma50Series.setData(data.sma50 as any);
+      s50.setData(data.sma50 as any);
     }
 
-    // 3. SMA 200 Çizgisi
-    if (showSMA200 && data.sma200 && data.sma200.length > 0) {
-      const sma200Series = chart.addSeries(LineSeries, {
-        color: '#F59E0B',
+    // ── SMA 200: Amber Warm ──────────────────────────────────────
+    if (showSMA200 && data.sma200?.length > 0) {
+      const s200 = chart.addSeries(LineSeries, {
+        color:     '#92400E',
         lineWidth: 2,
-        title: 'SMA 200',
+        title:     'SMA 200',
       });
-      sma200Series.setData(data.sma200 as any);
+      s200.setData(data.sma200 as any);
     }
 
-    // 4. Bollinger Bantları
+    // ── Bollinger Bands: Cobalt dashed ───────────────────────────
     if (showBB && data.bb_upper && data.bb_lower) {
-      const bbUpperSeries = chart.addSeries(LineSeries, {
-        color: 'rgba(99, 102, 241, 0.5)',
+      const bbU = chart.addSeries(LineSeries, {
+        color:     'rgba(30, 58, 138, 0.45)',
         lineWidth: 1,
         lineStyle: 2,
       });
-      bbUpperSeries.setData(data.bb_upper as any);
+      bbU.setData(data.bb_upper as any);
 
-      const bbLowerSeries = chart.addSeries(LineSeries, {
-        color: 'rgba(99, 102, 241, 0.5)',
+      const bbL = chart.addSeries(LineSeries, {
+        color:     'rgba(30, 58, 138, 0.45)',
         lineWidth: 1,
         lineStyle: 2,
       });
-      bbLowerSeries.setData(data.bb_lower as any);
+      bbL.setData(data.bb_lower as any);
     }
 
-    // 5. Hacim Histogramı
-    if (data.volume_series && data.volume_series.length > 0) {
-      const volumeSeries = chart.addSeries(HistogramSeries, {
-        priceFormat: { type: 'volume' },
-        priceScaleId: '', // Alt panel
+    // ── Volume Histogram ─────────────────────────────────────────
+    if (data.volume_series?.length > 0) {
+      const volSeries = chart.addSeries(HistogramSeries, {
+        priceFormat:  { type: 'volume' },
+        priceScaleId: '',
       });
-      volumeSeries.priceScale().applyOptions({
-        scaleMargins: { top: 0.82, bottom: 0 },
-      });
-      volumeSeries.setData(data.volume_series as any);
+      volSeries.priceScale().applyOptions({ scaleMargins: { top: 0.82, bottom: 0 } });
+      volSeries.setData(data.volume_series as any);
     }
 
     chart.timeScale().fitContent();
 
-    const handleResize = () => {
-      if (chartContainerRef.current && chartInstanceRef.current) {
-        chartInstanceRef.current.applyOptions({
-          width: chartContainerRef.current.clientWidth,
-        });
+    const onResize = () => {
+      if (containerRef.current && chartRef.current) {
+        chartRef.current.applyOptions({ width: containerRef.current.clientWidth });
       }
     };
-    window.addEventListener('resize', handleResize);
+    window.addEventListener('resize', onResize);
 
     return () => {
-      window.removeEventListener('resize', handleResize);
-      if (chartInstanceRef.current) {
-        chartInstanceRef.current.remove();
-        chartInstanceRef.current = null;
-      }
+      window.removeEventListener('resize', onResize);
+      chartRef.current?.remove();
+      chartRef.current = null;
     };
   }, [data, showSMA50, showSMA200, showBB]);
 
+  const ToggleBtn = ({
+    active, onToggle, color, label,
+  }: { active: boolean; onToggle: () => void; color: string; label: string }) => (
+    <button
+      className={`filter-btn ${active ? 'active' : ''}`}
+      onClick={onToggle}
+      style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.78rem' }}
+    >
+      <span style={{
+        width: 10,
+        height: 3,
+        borderRadius: 2,
+        background: color,
+        opacity: active ? 1 : 0.4,
+      }} />
+      {label}
+    </button>
+  );
+
   return (
-    <div className="card" style={{ padding: '1.75rem 2rem' }}>
-      <div className="card-header">
-        <div className="card-title-group">
-          <h2 className="card-title">
-            <Layers size={19} color="var(--accent-sky)" />
-            Akıcı Mum Grafiği & Çoklu İndikatör Katmanı
-          </h2>
-          <p className="card-subtitle">
-            TradingView Lightweight Charts v5 motoru ile 50 ve 200 günlük hareketli ortalamalar.
-          </p>
+    <div className="panel" style={{ borderTop: '2px solid var(--ink-secondary)' }}>
+      {/* Panel header */}
+      <div style={{
+        padding: '1rem 2rem',
+        borderBottom: '2px solid var(--ink-primary)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+      }}>
+        <div>
+          <div style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: '1rem',
+            fontWeight: 700,
+            fontStyle: 'italic',
+            color: 'var(--ink-primary)',
+          }}>
+            Fiyat Grafiği &amp; İndikatör Katmanları
+          </div>
+          <div style={{ fontSize: '0.72rem', color: 'var(--ink-secondary)', marginTop: 2 }}>
+            TradingView Lightweight Charts · 50 ve 200 günlük hareketli ortalamalar
+          </div>
         </div>
 
-        {/* Minimalist İndikatör Kontrolleri */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <button
-            className={`filter-btn ${showSMA50 ? 'active' : ''}`}
-            onClick={() => setShowSMA50(!showSMA50)}
-            style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-          >
-            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#0EA5E9' }} />
-            SMA 50
-          </button>
-          <button
-            className={`filter-btn ${showSMA200 ? 'active' : ''}`}
-            onClick={() => setShowSMA200(!showSMA200)}
-            style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-          >
-            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#F59E0B' }} />
-            SMA 200
-          </button>
-          <button
-            className={`filter-btn ${showBB ? 'active' : ''}`}
-            onClick={() => setShowBB(!showBB)}
-            style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-          >
-            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#6366F1' }} />
-            Bollinger Bantları
-          </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <ToggleBtn active={showSMA50}  onToggle={() => setShowSMA50(!showSMA50)}   color="#1E3A8A" label="SMA 50"  />
+          <ToggleBtn active={showSMA200} onToggle={() => setShowSMA200(!showSMA200)} color="#92400E" label="SMA 200" />
+          <ToggleBtn active={showBB}     onToggle={() => setShowBB(!showBB)}         color="rgba(30,58,138,0.6)" label="Bollinger" />
         </div>
       </div>
 
+      {/* Chart canvas */}
       <div
-        ref={chartContainerRef}
-        style={{
-          width: '100%',
-          height: 600,
-          borderRadius: 'var(--radius-md)',
-          overflow: 'hidden',
-          border: '1px solid var(--border-subtle)',
-        }}
+        ref={containerRef}
+        style={{ width: '100%', height: 580, overflow: 'hidden' }}
       />
     </div>
   );

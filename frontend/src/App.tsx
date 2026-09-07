@@ -17,7 +17,7 @@ import type {
   ScreenerItem,
   UserPortfolio
 } from './types';
-import { AlertCircle, RefreshCw, Cpu } from 'lucide-react';
+import { AlertCircle, RefreshCw } from 'lucide-react';
 
 const DEFAULT_PORTFOLIO: UserPortfolio = {
   name: 'Kurumsal Ana Portföy',
@@ -154,21 +154,20 @@ export const App: React.FC = () => {
       {/* Hata Bildirimi */}
       {error && (
         <div style={{
-          padding: '0.85rem 2.5rem',
-          background: 'var(--bear-bg)',
-          borderBottom: '1px solid var(--bear-border)',
+          padding: '0.75rem 2.5rem',
+          background: 'var(--madder-tint)',
+          borderBottom: '2px solid var(--madder-rule)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          color: '#F8FAFC'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '0.85rem' }}>
-            <AlertCircle size={18} color="var(--bear-text)" />
-            <span>{error}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '0.85rem', color: 'var(--madder-loss)' }}>
+            <AlertCircle size={16} />
+            <span style={{ fontWeight: 500 }}>{error}</span>
           </div>
           <button
             onClick={() => fetchTickerData(currentTicker)}
-            className="btn-secondary"
+            className="btn btn-secondary"
             style={{ padding: '4px 12px', fontSize: '0.78rem' }}
           >
             <RefreshCw size={12} /> Yeniden Dene
@@ -194,9 +193,10 @@ export const App: React.FC = () => {
             {marketData && <MarketBanner data={marketData} />}
 
             {isLoading ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                <div className="card" style={{ height: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
-                  Grafik ve göstergeler yükleniyor...
+              <div className="panel" style={{ height: 480, display: 'flex', alignItems: 'center', justifyContent: 'center', borderTop: '2px solid var(--ink-secondary)' }}>
+                <div style={{ textAlign: 'center', color: 'var(--ink-muted)' }}>
+                  <div style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: '1rem', marginBottom: 8 }}>Veri yükleniyor…</div>
+                  <div style={{ fontSize: '0.78rem' }}>Grafik ve göstergeler derleniyor</div>
                 </div>
               </div>
             ) : (
@@ -214,18 +214,17 @@ export const App: React.FC = () => {
           </div>
         )}
 
-        {/* SAYFA 3: 🧪 10.000$ SİMÜLASYON LABORATUVARI (Tam Ekran & XAI Çekmecesi) */}
+        {/* SAYFA 3: 10.000$ SİMÜLASYON LABORATUVARI */}
         {activeTab === 'simulation' && (
           <div>
             {simulationData ? (
               <SimulationLab simulation={simulationData} />
             ) : (
-              <div className="card" style={{ padding: '4rem', textAlign: 'center' }}>
-                <Cpu size={40} color="var(--accent-sky)" style={{ margin: '0 auto 16px' }} />
-                <h3 style={{ fontSize: '1.25rem', color: '#FFFFFF', marginBottom: 8 }}>
-                  10k Simülasyon Verisi Hesaplanıyor...
-                </h3>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+              <div className="panel" style={{ padding: '4rem', textAlign: 'center', borderTop: '2px solid var(--ink-secondary)' }}>
+                <div style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: '1.2rem', color: 'var(--ink-primary)', marginBottom: 10 }}>
+                  10k Simülasyon Verisi Hesaplanıyor…
+                </div>
+                <p style={{ color: 'var(--ink-secondary)', fontSize: '0.88rem', lineHeight: 1.6 }}>
                   Histerezis filtreleri, Sharpe oranı ve XAI karar gerekçeleri derleniyor.
                 </p>
               </div>

@@ -1,13 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { 
-  LayoutDashboard, 
-  CandlestickChart, 
-  FlaskConical, 
-  Briefcase, 
-  Search, 
-  ShieldCheck,
-  ArrowRight
-} from 'lucide-react';
+import { Search } from 'lucide-react';
 import type { ScreenerItem } from '../types';
 
 interface NavigationProps {
@@ -18,6 +10,13 @@ interface NavigationProps {
   universe: ScreenerItem[];
 }
 
+const TABS: { id: 'dashboard' | 'terminal' | 'simulation' | 'portfolio'; label: string }[] = [
+  { id: 'dashboard',  label: 'Piyasa Tarayıcısı'   },
+  { id: 'terminal',   label: 'Kantitatif Terminal'  },
+  { id: 'simulation', label: '10k Simülasyon Lab'   },
+  { id: 'portfolio',  label: 'Portföy Atölyesi'     },
+];
+
 export const Navigation: React.FC<NavigationProps> = ({
   currentTicker,
   onSelectTicker,
@@ -25,185 +24,170 @@ export const Navigation: React.FC<NavigationProps> = ({
   onSelectTab,
   universe,
 }) => {
-  const [query, setQuery] = useState('');
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [query, setQuery]         = useState('');
+  const [dropOpen, setDropOpen]   = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
 
-  // Filtered assets for dropdown
   const filtered = query.trim()
     ? universe.filter(
         (u) =>
           u.ticker.toLowerCase().includes(query.toLowerCase()) ||
           u.name.toLowerCase().includes(query.toLowerCase()) ||
           u.sector.toLowerCase().includes(query.toLowerCase())
-      )
+      ).slice(0, 8)
     : [];
 
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
+    const handler = (e: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
-        setIsDropdownOpen(false);
+        setDropOpen(false);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const handleSelectAsset = (ticker: string) => {
+  const handleSelect = (ticker: string) => {
     onSelectTicker(ticker);
     setQuery('');
-    setIsDropdownOpen(false);
-    // If on dashboard, seamlessly navigate to terminal for details
-    if (activeTab === 'dashboard') {
-      onSelectTab('terminal');
-    }
+    setDropOpen(false);
+    if (activeTab === 'dashboard') onSelectTab('terminal');
   };
 
   const currentAsset = universe.find((u) => u.ticker === currentTicker);
 
+  // Get current time in Istanbul
+  const now = new Date();
+  const timeStr = now.toLocaleString('tr-TR', {
+    timeZone: 'Europe/Istanbul',
+    weekday: 'long',
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  });
+
   return (
-    <header className="top-nav">
-      {/* Brand Section */}
-      <div className="brand-section" onClick={() => onSelectTab('dashboard')}>
-        <div className="brand-logo-icon">
-          <CandlestickChart size={20} color="#FFFFFF" strokeWidth={2.2} />
+    <header className="masthead">
+      {/* ── Top Bar: Brand + Date + Search + Status ── */}
+      <div className="masthead-top">
+
+        {/* Brand / Logotype */}
+        <div className="brand-section" onClick={() => onSelectTab('dashboard')}>
+          <div className="brand-logotype">NeuroQuant</div>
+          <div className="brand-tagline">Sovereign Quantitative Intelligence · Est. 2024</div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span className="brand-title">NeuroQuant</span>
-          <span className="brand-badge">Sovereign 3.0</span>
+
+        {/* Date line — newspaper style */}
+        <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+          <div style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: '0.68rem',
+            fontWeight: 600,
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            color: 'var(--ink-muted)',
+          }}>
+            {timeStr}
+          </div>
+          <div style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: '0.75rem',
+            fontStyle: 'italic',
+            color: 'var(--ink-secondary)',
+          }}>
+            Gerçek Zamanlı Piyasa Verisi
+          </div>
         </div>
-      </div>
 
-      {/* Center: Main Page Tabs */}
-      <nav className="nav-tabs-group">
-        <button
-          className={`nav-tab-btn ${activeTab === 'dashboard' ? 'active' : ''}`}
-          onClick={() => onSelectTab('dashboard')}
-        >
-          <LayoutDashboard size={16} />
-          Piyasa Radarı & Dashboard
-        </button>
+        {/* Right: Search + Ticker + Status */}
+        <div className="masthead-right">
 
-        <button
-          className={`nav-tab-btn ${activeTab === 'terminal' ? 'active' : ''}`}
-          onClick={() => onSelectTab('terminal')}
-        >
-          <CandlestickChart size={16} />
-          Kantitatif Terminal
-        </button>
-
-        <button
-          className={`nav-tab-btn ${activeTab === 'simulation' ? 'active' : ''}`}
-          onClick={() => onSelectTab('simulation')}
-        >
-          <FlaskConical size={16} />
-          10k Simülasyon Lab
-        </button>
-
-        <button
-          className={`nav-tab-btn ${activeTab === 'portfolio' ? 'active' : ''}`}
-          onClick={() => onSelectTab('portfolio')}
-        >
-          <Briefcase size={16} />
-          Portföy Yöneticisi
-        </button>
-      </nav>
-
-      {/* Right: Omnisearch & Active Ticker */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-        {/* Omnisearch */}
-        <div className="search-wrapper" ref={searchRef}>
-          <Search size={15} className="search-icon" />
-          <input
-            type="text"
-            className="search-input"
-            placeholder="Varlık veya Sektör Ara (NVDA, THYAO)..."
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              setIsDropdownOpen(true);
-            }}
-            onFocus={() => setIsDropdownOpen(true)}
-          />
-
-          {isDropdownOpen && filtered.length > 0 && (
-            <div className="search-dropdown">
-              {filtered.map((item) => (
-                <div
-                  key={item.ticker}
-                  className="search-result-item"
-                  onClick={() => handleSelectAsset(item.ticker)}
-                >
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span className="tabular" style={{ fontWeight: 700, color: '#F8FAFC' }}>
-                        {item.ticker}
-                      </span>
-                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                        {item.category}
-                      </span>
+          {/* Omnisearch */}
+          <div className="search-wrapper" ref={searchRef}>
+            <Search size={13} className="search-icon" />
+            <input
+              type="text"
+              className="search-input"
+              placeholder="Varlık ara — NVDA, BTC, THYAO..."
+              value={query}
+              onChange={(e) => { setQuery(e.target.value); setDropOpen(true); }}
+              onFocus={() => setDropOpen(true)}
+            />
+            {dropOpen && filtered.length > 0 && (
+              <div className="search-dropdown">
+                {filtered.map((item) => (
+                  <div
+                    key={item.ticker}
+                    className="search-result-item"
+                    onClick={() => handleSelect(item.ticker)}
+                  >
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span className="tabular" style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--ink-primary)' }}>
+                          {item.ticker}
+                        </span>
+                        <span style={{ fontSize: '0.7rem', color: 'var(--ink-muted)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                          {item.category}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--ink-secondary)', marginTop: 1 }}>
+                        {item.name}
+                      </div>
                     </div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                      {item.name}
+                    <div style={{ textAlign: 'right' }}>
+                      <div className="tabular" style={{ fontWeight: 600, fontSize: '0.82rem', color: 'var(--ink-primary)' }}>
+                        {item.last_close.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </div>
+                      <div className={item.change_pct >= 0 ? 'change-up' : 'change-down'} style={{ fontSize: '0.75rem' }}>
+                        {item.change_pct >= 0 ? '+' : ''}{item.change_pct.toFixed(2)}%
+                      </div>
                     </div>
                   </div>
+                ))}
+              </div>
+            )}
+          </div>
 
-                  <div style={{ textAlign: 'right' }}>
-                    <div className="tabular" style={{ fontWeight: 600, color: '#F8FAFC' }}>
-                      ${item.last_close.toLocaleString()}
-                    </div>
-                    <div
-                      className={`tag ${item.change_pct >= 0 ? 'tag-bull' : 'tag-bear'}`}
-                      style={{ fontSize: '0.68rem', padding: '1px 5px' }}
-                    >
-                      {item.change_pct >= 0 ? `+${item.change_pct}%` : `${item.change_pct}%`}
-                    </div>
-                  </div>
-                </div>
-              ))}
+          {/* Active Ticker Capsule */}
+          {currentAsset && (
+            <div
+              className="ticker-capsule"
+              onClick={() => onSelectTab('terminal')}
+              title="Terminale git"
+            >
+              <span className="tabular" style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--ink-primary)' }}>
+                {currentAsset.ticker}
+              </span>
+              <span style={{ width: 1, height: 14, background: 'var(--rule-strong)' }} />
+              <span className="tabular" style={{ color: 'var(--ink-secondary)', fontSize: '0.82rem' }}>
+                {currentAsset.last_close.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+              <span className={currentAsset.change_pct >= 0 ? 'change-up' : 'change-down'} style={{ fontSize: '0.78rem' }}>
+                {currentAsset.change_pct >= 0 ? '+' : ''}{currentAsset.change_pct.toFixed(2)}%
+              </span>
             </div>
           )}
-        </div>
 
-        {/* Current Active Ticker Capsule */}
-        {currentAsset && (
-          <div
-            onClick={() => onSelectTab('terminal')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: '6px 14px',
-              background: 'var(--bg-surface)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              transition: 'border-color 0.15s',
-            }}
-            title="Detaylı Grafiğe Git"
-          >
-            <span className="tabular" style={{ fontWeight: 700, color: '#FFFFFF', fontSize: '0.85rem' }}>
-              {currentAsset.ticker}
-            </span>
-            <span className="tabular" style={{ color: 'var(--text-secondary)', fontSize: '0.82rem' }}>
-              ${currentAsset.last_close.toLocaleString()}
-            </span>
-            <span
-              className={`tag ${currentAsset.change_pct >= 0 ? 'tag-bull' : 'tag-bear'}`}
-              style={{ fontSize: '0.7rem', padding: '1px 6px' }}
-            >
-              {currentAsset.change_pct >= 0 ? `+${currentAsset.change_pct}%` : `${currentAsset.change_pct}%`}
-            </span>
-            <ArrowRight size={13} color="var(--text-muted)" />
+          {/* System Status */}
+          <div className="status-pill">
+            <span className="status-dot" />
+            CANLI
           </div>
-        )}
-
-        {/* System Online Status */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.75rem', color: 'var(--bull-text)' }}>
-          <ShieldCheck size={16} />
-          <span className="tabular" style={{ fontWeight: 600, letterSpacing: '0.04em' }}>ONLINE</span>
         </div>
       </div>
+
+      {/* ── Section Navigation Tabs ── */}
+      <nav className="masthead-nav">
+        {TABS.map((tab) => (
+          <button
+            key={tab.id}
+            className={`nav-tab ${activeTab === tab.id ? 'active' : ''}`}
+            onClick={() => onSelectTab(tab.id)}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </nav>
     </header>
   );
 };

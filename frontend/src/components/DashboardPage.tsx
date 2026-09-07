@@ -1,15 +1,5 @@
 import React, { useState, useMemo } from 'react';
 import type { ScreenerItem, UserPortfolio } from '../types';
-import { 
-  TrendingUp, 
-  Zap, 
-  ArrowUpRight, 
-  ArrowDownRight, 
-  BarChart3, 
-  SlidersHorizontal,
-  Briefcase,
-  ChevronRight
-} from 'lucide-react';
 
 interface DashboardPageProps {
   screenerData: ScreenerItem[];
@@ -20,6 +10,19 @@ interface DashboardPageProps {
 
 type SortField = 'last_close' | 'change_pct' | 'dist_sma200_pct' | 'alpha_20d_cum' | 'confidence_score';
 
+const CATEGORIES = [
+  { id: 'ALL',    label: 'Tüm Evren' },
+  { id: 'BIST',   label: 'BIST 100'  },
+  { id: 'Tech',   label: 'ABD Tekno' },
+  { id: 'Crypto', label: 'Kripto'    },
+];
+
+function signalClass(signal: string): string {
+  if (signal.includes('AL')) return 'signal-buy';
+  if (signal.includes('SAT') || signal.includes('AZALT')) return 'signal-sell';
+  return 'signal-neutral';
+}
+
 export const DashboardPage: React.FC<DashboardPageProps> = ({
   screenerData,
   userPortfolio,
@@ -27,18 +30,16 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   onNavigateTab,
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
-  const [sortField, setSortField] = useState<SortField>('confidence_score');
-  const [sortAsc, setSortAsc] = useState<boolean>(false);
-  const [tableSearch, setTableSearch] = useState<string>('');
+  const [sortField, setSortField]               = useState<SortField>('confidence_score');
+  const [sortAsc, setSortAsc]                   = useState<boolean>(false);
+  const [tableSearch, setTableSearch]           = useState<string>('');
 
-  // Süzme ve Sıralama
+  /* ── Filter + Sort ───────────────────────────────────────────── */
   const filteredAndSorted = useMemo(() => {
     let result = [...screenerData];
-
     if (selectedCategory !== 'ALL') {
       result = result.filter((item) => item.category === selectedCategory);
     }
-
     if (tableSearch.trim()) {
       const q = tableSearch.toLowerCase();
       result = result.filter(
@@ -48,376 +49,379 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           item.sector.toLowerCase().includes(q)
       );
     }
-
     result.sort((a, b) => {
       const valA = a[sortField];
       const valB = b[sortField];
       return sortAsc ? valA - valB : valB - valA;
     });
-
     return result;
   }, [screenerData, selectedCategory, sortField, sortAsc, tableSearch]);
 
   const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortAsc(!sortAsc);
-    } else {
-      setSortField(field);
-      setSortAsc(false);
-    }
+    if (sortField === field) setSortAsc(!sortAsc);
+    else { setSortField(field); setSortAsc(false); }
   };
 
-  // Öne Çıkanlar (Top Highlights)
-  const topAlphaAsset = [...screenerData].sort((a, b) => b.alpha_20d_cum - a.alpha_20d_cum)[0];
-  const topSmaAsset = [...screenerData].sort((a, b) => b.dist_sma200_pct - a.dist_sma200_pct)[0];
-  const topVolumeAsset = [...screenerData].sort((a, b) => b.volume_ratio - a.volume_ratio)[0];
+  /* ── Highlights ──────────────────────────────────────────────── */
+  const topAlpha  = [...screenerData].sort((a, b) => b.alpha_20d_cum - a.alpha_20d_cum)[0];
+  const topSma    = [...screenerData].sort((a, b) => b.dist_sma200_pct - a.dist_sma200_pct)[0];
+  const topVolume = [...screenerData].sort((a, b) => b.volume_ratio - a.volume_ratio)[0];
 
-  // Portföy Özeti Hesaplaması
-  const totalStockVal = userPortfolio.positions.reduce((acc, p) => acc + p.shares * p.current_price, 0);
-  const totalPortfolioVal = userPortfolio.cash + totalStockVal;
-  const portfolioReturnPct = ((totalPortfolioVal - userPortfolio.initial_capital) / userPortfolio.initial_capital) * 100;
+  /* ── Portfolio Stats ─────────────────────────────────────────── */
+  const stockVal     = userPortfolio.positions.reduce((s, p) => s + p.shares * p.current_price, 0);
+  const totalVal     = userPortfolio.cash + stockVal;
+  const returnPct    = ((totalVal - userPortfolio.initial_capital) / userPortfolio.initial_capital) * 100;
+  const returnPositive = returnPct >= 0;
+
+  /* ── Sort Indicator ──────────────────────────────────────────── */
+  const sortArrow = (field: SortField) => sortField === field ? (sortAsc ? ' ▲' : ' ▼') : '';
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-      {/* 1. Üst Başlık & Açıklama */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-        <div>
-          <span style={{ fontSize: '0.8rem', color: 'var(--accent-sky)', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-            Kurumsal Gözetim
-          </span>
-          <h1 style={{ fontSize: '2rem', color: '#FFFFFF', marginTop: 4 }}>
-            Piyasa Radarı & Kantitatif Tarayıcı
-          </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', marginTop: 4, maxWidth: 800 }}>
-            Çok faktörlü yapay zeka modelleri, 200 günlük hareketli ortalama mesafeleri ve sektörel alfa ayrışmalarına göre sıralanmış canlı piyasa evreni.
-          </p>
-        </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem', animation: 'fadeUp 0.35s ease' }}>
 
-        {/* Hızlı Portföy Önizleme Kartı */}
-        <div 
-          onClick={() => onNavigateTab('portfolio')}
-          style={{
-            background: 'var(--bg-card)',
-            border: '1px solid var(--border-subtle)',
-            borderRadius: 'var(--radius-md)',
-            padding: '1rem 1.5rem',
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-            minWidth: 260,
-          }}
-          className="screener-row"
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Briefcase size={14} color="var(--accent-sky)" />
+      {/* ══════════════════════════════════════════════════════════
+          SECTION 1 — PORTFOLIO OVERVIEW BAR
+         ══════════════════════════════════════════════════════════ */}
+      <div
+        className="panel"
+        style={{ borderTop: '3px solid var(--ink-primary)' }}
+      >
+        {/* Panel header */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '1rem 2rem',
+          borderBottom: '2px solid var(--ink-primary)',
+        }}>
+          <div>
+            <div className="section-label">Portföy Durumu</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', fontWeight: 700, color: 'var(--ink-primary)' }}>
               {userPortfolio.name}
-            </span>
-            <ChevronRight size={14} color="var(--text-muted)" />
+            </div>
           </div>
-          <div className="tabular" style={{ fontSize: '1.35rem', fontWeight: 700, color: '#FFFFFF' }}>
-            ${totalPortfolioVal.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+          <button
+            className="btn btn-secondary"
+            onClick={() => onNavigateTab('portfolio')}
+            style={{ fontSize: '0.78rem' }}
+          >
+            Portföy Atölyesi →
+          </button>
+        </div>
+
+        {/* Metrics row */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)' }}>
+          <div className="metric-block">
+            <div className="metric-label">Toplam Değer</div>
+            <div className="metric-value tabular">
+              {totalVal.toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ₺
+            </div>
+            <div className="metric-sub">Nakit + Hisse</div>
           </div>
-          <div style={{ fontSize: '0.78rem', marginTop: 2 }}>
-            <span className={portfolioReturnPct >= 0 ? 'tabular' : 'tabular'} style={{ color: portfolioReturnPct >= 0 ? 'var(--bull-text)' : 'var(--bear-text)', fontWeight: 600 }}>
-              %{portfolioReturnPct >= 0 ? `+${portfolioReturnPct.toFixed(2)}` : portfolioReturnPct.toFixed(2)}
-            </span>
-            <span style={{ color: 'var(--text-muted)', marginLeft: 6 }}>
-              ({userPortfolio.positions.length} Varlık)
-            </span>
+          <div className="metric-block">
+            <div className="metric-label">Net Getiri</div>
+            <div className="metric-value tabular" style={{ color: returnPositive ? 'var(--forest-gain)' : 'var(--madder-loss)' }}>
+              {returnPositive ? '+' : ''}{returnPct.toFixed(2)}%
+            </div>
+            <div className="metric-sub">Başlangıçtan beri</div>
+          </div>
+          <div className="metric-block">
+            <div className="metric-label">Nakit Rezervi</div>
+            <div className="metric-value tabular">
+              {userPortfolio.cash.toLocaleString('tr-TR')} ₺
+            </div>
+            <div className="metric-sub">Kullanılabilir</div>
+          </div>
+          <div className="metric-block">
+            <div className="metric-label">Pozisyon Sayısı</div>
+            <div className="metric-value tabular">{userPortfolio.positions.length}</div>
+            <div className="metric-sub">Aktif varlık</div>
+          </div>
+          <div className="metric-block">
+            <div className="metric-label">Hisse Değeri</div>
+            <div className="metric-value tabular">
+              {stockVal.toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ₺
+            </div>
+            <div className="metric-sub">Piyasa değeri</div>
           </div>
         </div>
       </div>
 
-      {/* 2. Günün Öne Çıkan Ayrışanları (Highlights) */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem' }}>
-        {/* Top Alpha */}
-        {topAlphaAsset && (
-          <div 
-            className="card screener-row" 
-            style={{ padding: '1.5rem' }}
-            onClick={() => {
-              onSelectTicker(topAlphaAsset.ticker);
-              onNavigateTab('terminal');
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-              <span className="tag tag-bull">
-                <Zap size={13} /> Sektörel Alfa Lideri
-              </span>
-              <span className="tabular" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                20 Günlük Ayrışma
-              </span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-              <div>
-                <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#FFFFFF' }}>
-                  {topAlphaAsset.ticker}
-                </div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                  {topAlphaAsset.name}
-                </div>
-              </div>
-              <div className="tabular" style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--bull-text)' }}>
-                +%{topAlphaAsset.alpha_20d_cum}
-              </div>
-            </div>
-            <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid var(--border-divider)', display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              <span>Fiyat: ${topAlphaAsset.last_close}</span>
-              <span style={{ color: 'var(--accent-sky)', fontWeight: 600 }}>Grafiğe Git →</span>
-            </div>
+      {/* ══════════════════════════════════════════════════════════
+          SECTION 2 — LEAD STORY: THREE COLUMN HIGHLIGHTS
+         ══════════════════════════════════════════════════════════ */}
+      <div className="panel" style={{ borderTop: '2px solid var(--ink-secondary)' }}>
+        {/* Masthead row */}
+        <div style={{
+          padding: '0.75rem 2rem',
+          borderBottom: '1px solid var(--rule-strong)',
+          display: 'flex',
+          alignItems: 'baseline',
+          justifyContent: 'space-between',
+        }}>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', fontWeight: 700, fontStyle: 'italic', color: 'var(--ink-primary)' }}>
+            Günün Ayrışan Hareketleri
           </div>
-        )}
+          <div style={{ fontSize: '0.65rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-muted)' }}>
+            Çok-Faktörlü Kantitatif Tarama
+          </div>
+        </div>
 
-        {/* Top 200 SMA Distance */}
-        {topSmaAsset && (
-          <div 
-            className="card screener-row" 
-            style={{ padding: '1.5rem' }}
-            onClick={() => {
-              onSelectTicker(topSmaAsset.ticker);
-              onNavigateTab('terminal');
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-              <span className="tag tag-accent">
-                <TrendingUp size={13} /> Güçlü Trend Momentumu
-              </span>
-              <span className="tabular" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                200 SMA Mesafesi
-              </span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-              <div>
-                <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#FFFFFF' }}>
-                  {topSmaAsset.ticker}
-                </div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                  {topSmaAsset.name}
-                </div>
+        {/* Three-column editorial grid */}
+        <div className="lead-grid">
+          {/* Alpha Leader */}
+          {topAlpha && (
+            <div
+              className="lead-cell"
+              onClick={() => { onSelectTicker(topAlpha.ticker); onNavigateTab('terminal'); }}
+            >
+              <div className="lead-rank">Sektörel Alfa Lideri — 20G Kümülatif</div>
+              <div className="lead-headline">{topAlpha.ticker}</div>
+              <div style={{ marginBottom: 8 }}>
+                <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.8rem', fontWeight: 700, color: 'var(--forest-gain)' }}>
+                  +{topAlpha.alpha_20d_cum}%
+                </span>
               </div>
-              <div className="tabular" style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--accent-sky)' }}>
-                +%{topSmaAsset.dist_sma200_pct}
+              <div className="lead-sub">{topAlpha.name}</div>
+              <div style={{ marginTop: 10, display: 'flex', gap: 8, alignItems: 'center' }}>
+                <span className="signal signal-buy">{topAlpha.ai_signal}</span>
+                <span style={{ fontSize: '0.72rem', color: 'var(--ink-muted)' }}>Güven: %{topAlpha.confidence_score}</span>
               </div>
             </div>
-            <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid var(--border-divider)', display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              <span>Sinyal: {topSmaAsset.ai_signal}</span>
-              <span style={{ color: 'var(--accent-sky)', fontWeight: 600 }}>Grafiğe Git →</span>
-            </div>
-          </div>
-        )}
+          )}
 
-        {/* Top Volume Outlier */}
-        {topVolumeAsset && (
-          <div 
-            className="card screener-row" 
-            style={{ padding: '1.5rem' }}
-            onClick={() => {
-              onSelectTicker(topVolumeAsset.ticker);
-              onNavigateTab('terminal');
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-              <span className="tag" style={{ background: 'var(--accent-amber-bg)', color: 'var(--accent-amber)', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
-                <BarChart3 size={13} /> Para Akışı & Hacim Anomalisi
-              </span>
-              <span className="tabular" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                20G Ortalamaya Oran
-              </span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-              <div>
-                <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#FFFFFF' }}>
-                  {topVolumeAsset.ticker}
-                </div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                  {topVolumeAsset.name}
-                </div>
+          {/* 200 SMA Trend Leader */}
+          {topSma && (
+            <div
+              className="lead-cell"
+              onClick={() => { onSelectTicker(topSma.ticker); onNavigateTab('terminal'); }}
+            >
+              <div className="lead-rank">200 Günlük Ortalama — En Güçlü Trend</div>
+              <div className="lead-headline">{topSma.ticker}</div>
+              <div style={{ marginBottom: 8 }}>
+                <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.8rem', fontWeight: 700, color: 'var(--cobalt)' }}>
+                  +{topSma.dist_sma200_pct}%
+                </span>
               </div>
-              <div className="tabular" style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--accent-amber)' }}>
-                {topVolumeAsset.volume_ratio}x
+              <div className="lead-sub">{topSma.name}</div>
+              <div style={{ marginTop: 10, display: 'flex', gap: 8, alignItems: 'center' }}>
+                <span className="signal signal-cobalt">200 SMA</span>
+                <span style={{ fontSize: '0.72rem', color: 'var(--ink-muted)' }}>
+                  Fiyat: {topSma.last_close.toLocaleString('tr-TR', { maximumFractionDigits: 2 })}
+                </span>
               </div>
             </div>
-            <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid var(--border-divider)', display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              <span>Beta: {topVolumeAsset.beta}</span>
-              <span style={{ color: 'var(--accent-sky)', fontWeight: 600 }}>Grafiğe Git →</span>
+          )}
+
+          {/* Volume Anomaly */}
+          {topVolume && (
+            <div
+              className="lead-cell"
+              onClick={() => { onSelectTicker(topVolume.ticker); onNavigateTab('terminal'); }}
+            >
+              <div className="lead-rank">Hacim Anomalisi — Para Akışı Yoğunluğu</div>
+              <div className="lead-headline">{topVolume.ticker}</div>
+              <div style={{ marginBottom: 8 }}>
+                <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.8rem', fontWeight: 700, color: 'var(--amber-warm)' }}>
+                  {topVolume.volume_ratio}×
+                </span>
+              </div>
+              <div className="lead-sub">{topVolume.name}</div>
+              <div style={{ marginTop: 10, display: 'flex', gap: 8, alignItems: 'center' }}>
+                <span className="signal signal-neutral">Beta {topVolume.beta}</span>
+                <span style={{ fontSize: '0.72rem', color: 'var(--ink-muted)' }}>20G Hacim Ortalaması</span>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
-      {/* 3. Dinamik Hisse Tarayıcı Tablosu (Screener) */}
-      <div className="card" style={{ padding: '2rem' }}>
-        <div className="card-header">
-          <div className="card-title-group">
-            <h2 className="card-title">
-              <SlidersHorizontal size={20} color="var(--accent-sky)" />
-              Kantitatif Varlık Evreni & Filtreleme
-            </h2>
-            <p className="card-subtitle">
-              Sütun başlıklarına tıklayarak fiyata, değişime, alfaya veya yapay zeka güven skoruna göre sıralayabilirsiniz.
-            </p>
+      {/* ══════════════════════════════════════════════════════════
+          SECTION 3 — THE FINANCIAL COMPASS: SCREENER TABLE
+         ══════════════════════════════════════════════════════════ */}
+      <div className="panel" style={{ borderTop: '2px solid var(--ink-secondary)' }}>
+
+        {/* Table Header */}
+        <div style={{
+          padding: '1rem 2rem',
+          borderBottom: '2px solid var(--ink-primary)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '1rem',
+          flexWrap: 'wrap',
+        }}>
+          <div>
+            <div style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: '1rem',
+              fontWeight: 700,
+              fontStyle: 'italic',
+              color: 'var(--ink-primary)',
+            }}>
+              Kantitatif Varlık Evreni
+            </div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--ink-secondary)', marginTop: 2 }}>
+              Yapay zeka sinyalleri, 200 SMA, alfa ve güven skoruna göre sıralanabilir — sütun başlığına tıklayın
+            </div>
           </div>
 
-          {/* Sektör Filtreleri ve Tablo İçi Arama */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <input
               type="text"
-              placeholder="Tabloda filtrele..."
+              className="table-search"
+              placeholder="Tablo içi filtrele..."
               value={tableSearch}
               onChange={(e) => setTableSearch(e.target.value)}
-              className="search-input"
-              style={{ width: 180, padding: '6px 12px' }}
             />
-
-            <div className="filter-tabs">
-              {[
-                { id: 'ALL', label: 'Tümü (12)' },
-                { id: 'BIST', label: 'BIST 100' },
-                { id: 'Tech', label: 'ABD Teknoloji' },
-                { id: 'Crypto', label: 'Kripto' },
-              ].map((tab) => (
+            <div className="filter-bar">
+              {CATEGORIES.map((cat) => (
                 <button
-                  key={tab.id}
-                  className={`filter-btn ${selectedCategory === tab.id ? 'active' : ''}`}
-                  onClick={() => setSelectedCategory(tab.id)}
+                  key={cat.id}
+                  className={`filter-btn ${selectedCategory === cat.id ? 'active' : ''}`}
+                  onClick={() => setSelectedCategory(cat.id)}
                 >
-                  {tab.label}
+                  {cat.label}
                 </button>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Tablo */}
-        <div className="screener-table-container">
+        {/* Screener Table */}
+        <div className="screener-wrap">
           <table className="screener-table">
             <thead>
               <tr>
-                <th>Varlık / İsim</th>
-                <th>Sektör / Kategori</th>
-                <th onClick={() => handleSort('last_close')}>
-                  Son Fiyat {sortField === 'last_close' && (sortAsc ? '▲' : '▼')}
+                <th style={{ paddingLeft: '2rem' }}>Varlık</th>
+                <th>Kategori</th>
+                <th onClick={() => handleSort('last_close')} style={{ cursor: 'pointer' }}>
+                  Son Fiyat{sortArrow('last_close')}
                 </th>
-                <th onClick={() => handleSort('change_pct')}>
-                  24s Değişim {sortField === 'change_pct' && (sortAsc ? '▲' : '▼')}
+                <th onClick={() => handleSort('change_pct')} style={{ cursor: 'pointer' }}>
+                  24s Değişim{sortArrow('change_pct')}
                 </th>
-                <th onClick={() => handleSort('dist_sma200_pct')}>
-                  200 SMA Mesafesi {sortField === 'dist_sma200_pct' && (sortAsc ? '▲' : '▼')}
+                <th onClick={() => handleSort('dist_sma200_pct')} style={{ cursor: 'pointer' }}>
+                  200 SMA{sortArrow('dist_sma200_pct')}
                 </th>
-                <th onClick={() => handleSort('alpha_20d_cum')}>
-                  Sektörel Alfa (20G) {sortField === 'alpha_20d_cum' && (sortAsc ? '▲' : '▼')}
+                <th onClick={() => handleSort('alpha_20d_cum')} style={{ cursor: 'pointer' }}>
+                  Alfa (20G){sortArrow('alpha_20d_cum')}
                 </th>
                 <th>Beta</th>
-                <th>Hacim Hızı</th>
-                <th onClick={() => handleSort('confidence_score')}>
-                  AI Kararı & Güven {sortField === 'confidence_score' && (sortAsc ? '▲' : '▼')}
+                <th>Hacim ×</th>
+                <th onClick={() => handleSort('confidence_score')} style={{ cursor: 'pointer' }}>
+                  AI Kararı{sortArrow('confidence_score')}
                 </th>
-                <th style={{ textAlign: 'right' }}>İşlem</th>
+                <th style={{ textAlign: 'right', paddingRight: '2rem' }}>Hızlı Erişim</th>
               </tr>
             </thead>
             <tbody>
-              {filteredAndSorted.map((item) => {
-                const isBull = item.change_pct >= 0;
+              {filteredAndSorted.length === 0 ? (
+                <tr>
+                  <td colSpan={10} style={{ textAlign: 'center', padding: '3rem', color: 'var(--ink-muted)', fontStyle: 'italic' }}>
+                    Bu filtrelerle eşleşen varlık bulunamadı.
+                  </td>
+                </tr>
+              ) : filteredAndSorted.map((item) => {
+                const isUp = item.change_pct >= 0;
+                const smaUp = item.dist_sma200_pct >= 0;
+                const alphaUp = item.alpha_20d_cum >= 0;
                 return (
                   <tr
                     key={item.ticker}
                     className="screener-row"
-                    onClick={() => {
-                      onSelectTicker(item.ticker);
-                      onNavigateTab('terminal');
-                    }}
+                    onClick={() => { onSelectTicker(item.ticker); onNavigateTab('terminal'); }}
                   >
-                    <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <span className="tabular" style={{ fontWeight: 800, fontSize: '0.95rem', color: '#FFFFFF' }}>
+                    {/* Asset name */}
+                    <td style={{ paddingLeft: '2rem' }}>
+                      <div>
+                        <span className="tabular" style={{ fontWeight: 700, fontSize: '0.92rem', color: 'var(--ink-primary)' }}>
                           {item.ticker}
                         </span>
-                        <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                        <div style={{ fontSize: '0.76rem', color: 'var(--ink-muted)', marginTop: 1 }}>
                           {item.name}
-                        </span>
+                        </div>
                       </div>
                     </td>
+
+                    {/* Category */}
                     <td>
-                      <span className="tag tag-neutral" style={{ fontSize: '0.72rem' }}>
+                      <span style={{
+                        fontSize: '0.68rem',
+                        fontWeight: 600,
+                        letterSpacing: '0.08em',
+                        textTransform: 'uppercase',
+                        color: 'var(--ink-muted)',
+                        fontFamily: 'var(--font-body)',
+                      }}>
                         {item.sector}
                       </span>
                     </td>
+
+                    {/* Price */}
                     <td>
-                      <span className="tabular" style={{ fontWeight: 700, fontSize: '0.95rem', color: '#FFFFFF' }}>
-                        ${item.last_close.toLocaleString()}
+                      <span className="tabular" style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--ink-primary)' }}>
+                        {item.last_close.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
                     </td>
+
+                    {/* 24h change */}
                     <td>
-                      <span
-                        className={`tag ${isBull ? 'tag-bull' : 'tag-bear'} tabular`}
-                        style={{ fontWeight: 700 }}
-                      >
-                        {isBull ? <ArrowUpRight size={13} /> : <ArrowDownRight size={13} />}
-                        {isBull ? `+${item.change_pct}%` : `${item.change_pct}%`}
+                      <span className={`tabular ${isUp ? 'change-up' : 'change-down'}`} style={{ fontWeight: 700 }}>
+                        {isUp ? '+' : ''}{item.change_pct.toFixed(2)}%
                       </span>
                     </td>
+
+                    {/* SMA 200 distance */}
                     <td>
-                      <span
-                        className="tabular"
-                        style={{
-                          fontWeight: 600,
-                          color: item.dist_sma200_pct >= 0 ? 'var(--bull-text)' : 'var(--bear-text)',
-                        }}
-                      >
-                        %{item.dist_sma200_pct >= 0 ? `+${item.dist_sma200_pct}` : item.dist_sma200_pct}
+                      <span className="tabular" style={{ fontWeight: 600, color: smaUp ? 'var(--forest-gain)' : 'var(--madder-loss)' }}>
+                        {smaUp ? '+' : ''}{item.dist_sma200_pct.toFixed(2)}%
                       </span>
                     </td>
+
+                    {/* Alpha 20d */}
                     <td>
-                      <span
-                        className="tabular"
-                        style={{
-                          fontWeight: 600,
-                          color: item.alpha_20d_cum >= 0 ? 'var(--bull-text)' : 'var(--text-muted)',
-                        }}
-                      >
-                        %{item.alpha_20d_cum >= 0 ? `+${item.alpha_20d_cum}` : item.alpha_20d_cum}
+                      <span className="tabular" style={{ fontWeight: 600, color: alphaUp ? 'var(--forest-gain)' : 'var(--ink-secondary)' }}>
+                        {alphaUp ? '+' : ''}{item.alpha_20d_cum.toFixed(2)}%
                       </span>
                     </td>
+
+                    {/* Beta */}
                     <td>
-                      <span className="tabular" style={{ color: 'var(--text-secondary)' }}>
-                        {item.beta}
+                      <span className="tabular" style={{ color: 'var(--ink-secondary)', fontSize: '0.85rem' }}>
+                        {item.beta.toFixed(2)}
                       </span>
                     </td>
+
+                    {/* Volume ratio */}
                     <td>
-                      <span
-                        className="tabular"
-                        style={{
-                          color: item.volume_ratio > 1.2 ? 'var(--accent-amber)' : 'var(--text-secondary)',
-                          fontWeight: item.volume_ratio > 1.2 ? 700 : 400,
-                        }}
-                      >
-                        {item.volume_ratio}x
+                      <span className="tabular" style={{
+                        fontWeight: item.volume_ratio > 1.3 ? 700 : 400,
+                        color: item.volume_ratio > 1.3 ? 'var(--amber-warm)' : 'var(--ink-secondary)',
+                        fontSize: '0.85rem',
+                      }}>
+                        {item.volume_ratio.toFixed(2)}×
                       </span>
                     </td>
+
+                    {/* AI Signal */}
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span
-                          className={`tag ${
-                            item.ai_signal.includes('AL')
-                              ? 'tag-bull'
-                              : item.ai_signal.includes('AZALT')
-                              ? 'tag-bear'
-                              : 'tag-neutral'
-                          }`}
-                          style={{ fontWeight: 700 }}
-                        >
+                        <span className={`signal ${signalClass(item.ai_signal)}`}>
                           {item.ai_signal}
                         </span>
-                        <span className="tabular" style={{ fontSize: '0.78rem', color: 'var(--accent-sky)' }}>
+                        <span className="tabular" style={{ fontSize: '0.72rem', color: 'var(--cobalt)', fontWeight: 600 }}>
                           %{item.confidence_score}
                         </span>
                       </div>
                     </td>
-                    <td style={{ textAlign: 'right' }}>
+
+                    {/* Actions */}
+                    <td style={{ textAlign: 'right', paddingRight: '2rem' }}>
                       <div style={{ display: 'inline-flex', gap: 6 }}>
                         <button
-                          className="btn-secondary"
-                          style={{ padding: '4px 10px', fontSize: '0.72rem' }}
+                          className="btn btn-secondary"
+                          style={{ padding: '3px 10px', fontSize: '0.72rem' }}
                           onClick={(e) => {
                             e.stopPropagation();
                             onSelectTicker(item.ticker);
@@ -427,8 +431,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                           Terminal
                         </button>
                         <button
-                          className="btn-primary"
-                          style={{ padding: '4px 10px', fontSize: '0.72rem', background: 'var(--bg-elevated)', border: '1px solid var(--border-hover)' }}
+                          className="btn btn-primary"
+                          style={{ padding: '3px 10px', fontSize: '0.72rem' }}
                           onClick={(e) => {
                             e.stopPropagation();
                             onSelectTicker(item.ticker);
@@ -444,6 +448,22 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               })}
             </tbody>
           </table>
+        </div>
+
+        {/* Table footer */}
+        <div style={{
+          padding: '0.75rem 2rem',
+          borderTop: '1px solid var(--rule-hairline)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          fontSize: '0.72rem',
+          color: 'var(--ink-muted)',
+        }}>
+          <span>{filteredAndSorted.length} varlık gösteriliyor</span>
+          <span style={{ fontStyle: 'italic' }}>
+            Veriler yfinance üzerinden gerçek zamanlı alınmaktadır · LightGBM çok-faktörlü model
+          </span>
         </div>
       </div>
     </div>
