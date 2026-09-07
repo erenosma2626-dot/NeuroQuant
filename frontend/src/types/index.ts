@@ -62,6 +62,9 @@ export interface ForecastData {
   decision_color: string;
   cone_series: ConeStep[];
   features_used: string[];
+  engine?: string;
+  engine_type?: string;
+  available_engines?: { id: string; name: string; badge: string }[];
 }
 
 export interface EarningsRecord {

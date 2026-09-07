@@ -462,7 +462,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         }}>
           <span>{filteredAndSorted.length} varlık gösteriliyor</span>
           <span style={{ fontStyle: 'italic' }}>
-            Veriler yfinance üzerinden gerçek zamanlı alınmaktadır · LightGBM çok-faktörlü model
+            Veriler yfinance üzerinden gerçek zamanlı alınmaktadır · Google TimesFM 3.0 Foundation Model &amp; Çok-Faktörlü Quant Motoru
           </span>
         </div>
       </div>

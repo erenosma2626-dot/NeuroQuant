@@ -120,9 +120,37 @@ export const App: React.FC = () => {
         fetch(`/api/agent/comment/${ticker}`),
       ]);
 
-      if (!mRes.ok) throw new Error(`${ticker} piyasa verisi alınamadı.`);
+      if (!mRes.ok) throw new Error(`'${ticker}' sembolü Yahoo Finance üzerinde bulunamadı veya veri çekilemedi.`);
 
-      setMarketData(await mRes.json());
+      const mData = await mRes.json();
+      setMarketData(mData);
+
+      // Dinamik olarak aranan hisseyi evrene dahil et
+      setScreenerData((prev) => {
+        const cleanT = ticker.toUpperCase();
+        if (prev.some((item) => item.ticker.toUpperCase() === cleanT)) {
+          return prev;
+        }
+        const isBist = cleanT.endsWith('.IS');
+        const isCrypto = cleanT.includes('-USD');
+        const newItem: ScreenerItem = {
+          ticker: cleanT,
+          name: cleanT,
+          category: isBist ? 'BIST' : (isCrypto ? 'Crypto' : 'Global'),
+          sector: isBist ? 'Borsa İstanbul' : (isCrypto ? 'Kripto Varlık' : 'Küresel Piyasa'),
+          last_close: mData.current_price,
+          change_pct: mData.change_pct,
+          dist_sma200_pct: mData.dist_sma200_pct,
+          is_golden_cross: mData.is_golden_cross,
+          alpha_20d_cum: mData.alpha_20d_cum,
+          beta: mData.beta,
+          ai_signal: 'ANALİZ EDİLDİ',
+          confidence_score: 75,
+          volume_ratio: mData.volume_ratio ?? 1.0,
+        };
+        return [newItem, ...prev];
+      });
+
       if (fRes.ok) setForecastData(await fRes.json());
       if (fundRes.ok) setFundamentalsData(await fundRes.json());
       if (simRes.ok) setSimulationData(await simRes.json());
@@ -130,7 +158,7 @@ export const App: React.FC = () => {
 
     } catch (err: any) {
       console.error(err);
-      setError(err.message || 'Veri yüklenirken bir sorun oluştu.');
+      setError(err.message || `'${ticker}' verisi yüklenirken bir sorun oluştu.`);
     } finally {
       setIsLoading(false);
     }
