@@ -82,11 +82,17 @@ def predict_future(model, scaler, df):
     current_price = prices[-1]
     future_prices = []
     
+    # Dinamik Volatilite Tavanı (3 * 20 günlük oynaklık, en az %5, en fazla %25)
+    rolling_vol = df['Close'].pct_change().tail(20).std()
+    if np.isnan(rolling_vol) or rolling_vol == 0:
+        vol_limit = 0.10
+    else:
+        vol_limit = float(np.clip(3 * rolling_vol, 0.05, 0.25))
+
     for pct in predicted_pcts:
-        # Volatilite Kontrolü (Opsiyonel Güvenlik)
-        # LSTM bazen uçabilir, %10 üstü değişimleri tıraşlayalım.
-        if pct > 0.10: pct = 0.10
-        if pct < -0.10: pct = -0.10
+        # Dinamik volatilite filtresi (varlığın doğal rejimine duyarlı)
+        if pct > vol_limit: pct = vol_limit
+        if pct < -vol_limit: pct = -vol_limit
             
         next_price = current_price * (1 + pct)
         future_prices.append(next_price)
@@ -125,15 +131,15 @@ def score_news(sentiment_pipe, news_list):
     return avg, label, riskiest_news
 
 # --- KARAR MEKANİZMASI ---
-def make_final_decision(preds, sentiment_score, riskiest_news, current_rsi):
+def make_final_decision(preds, sentiment_score, riskiest_news, current_rsi=None):
     start_p = preds[0]
     end_p = preds[-1]
     change_pct = ((end_p - start_p) / start_p) * 100
     
-    if current_rsi > 70: return "RİSKLİ", "orange", f"RSI {current_rsi:.0f} (Aşırı Alım)"
+    # Not: Yanıltıcı aşırı alım sinyallerini önlemek için RSI filtresi kaldırıldı.
     if riskiest_news and sentiment_score < 0: return "SAT / UZAK DUR", "red", "Riskli Haber Var"
 
-    # Eşiği LSTM için hassas tutalım (0.1 ideal)
+    # Eşiği LSTM / Quantile için hassas tutalım (0.1 ideal)
     if change_pct > 0.1:
         if sentiment_score > 0: return "GÜÇLÜ AL 🚀", "green", f"Model %{change_pct:.2f} Artış Bekliyor"
         else: return "AL (Teknik)", "blue", "Yükseliş Beklentisi"
@@ -144,19 +150,22 @@ def make_final_decision(preds, sentiment_score, riskiest_news, current_rsi):
 
 
 
-def ask_gemini(ticker, price, rsi, macd_signal, decision, news_list, sentiment_score):
+def ask_gemini(ticker, price, rsi=None, macd_signal="", decision="", news_list=None, sentiment_score=0.0):
     """
     Gemini Pro'ya HEM TEKNİK HEM HABER verilerini gönderip hibrit yorum ister.
     """
     try:
-        # 1. API Anahtarını Al
-        import streamlit as st
-        import google.generativeai as genai
-        
-        if "GEMINI_API_KEY" in st.secrets:
-            api_key = st.secrets["GEMINI_API_KEY"]
-        else:
-            return "⚠️ Hata: Streamlit Secrets içinde 'GEMINI_API_KEY' bulunamadı."
+        api_key = os.environ.get("GEMINI_API_KEY")
+        if not api_key:
+            try:
+                import streamlit as st
+                if "GEMINI_API_KEY" in st.secrets:
+                    api_key = st.secrets["GEMINI_API_KEY"]
+            except Exception:
+                pass
+
+        if not api_key:
+            return "⚠️ Hata: 'GEMINI_API_KEY' ortam değişkeninde veya Streamlit Secrets içinde bulunamadı."
 
         # 2. Modeli Hazırla
         genai.configure(api_key=api_key)
@@ -168,14 +177,15 @@ def ask_gemini(ticker, price, rsi, macd_signal, decision, news_list, sentiment_s
             titles = [f"- {n.get('title', '')}" for n in news_list[:3]]
             news_summary = "\n".join(titles)
 
+        rsi_line = f"- RSI: {rsi:.2f}\n" if rsi is not None else ""
+
         # 4. Soruyu Hazırla (Prompt Engineering - Hibrit Analiz)
         prompt = f"""
         Sen profesyonel bir finansal stratejistsin. Aşağıdaki verileri birleştirerek {ticker} için bir analiz yaz.
         
         A) TEKNİK GÖSTERGELER:
         - Fiyat: {price}
-        - RSI: {rsi:.2f} (30 altı aşırı satım, 70 üstü aşırı alım)
-        - MACD Durumu: {macd_signal}
+        {rsi_line}- MACD Durumu: {macd_signal}
         - Algoritma Kararı: {decision}
         
         B) TEMEL ANALİZ (HABERLER & DUYGU):

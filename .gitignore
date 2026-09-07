@@ -12,9 +12,7 @@ env/
 .DS_Store
 Thumbs.db
 
-# Veri setleri (Çok büyük dosyaları yüklememek için, opsiyonel)
-# stocks_hazir_veri.csv 
-# (Ama şimdilik veri setimiz küçük kalsın dersen bunu ekleme)
-
-# Modeller (Eğer çok büyükse LFS gerekir ama şimdilik kalsın)
-# models/*.h5
+# Frontend
+frontend/node_modules/
+frontend/dist/
+Icon?
