@@ -10,8 +10,21 @@ interface PortfolioPageProps {
   onNavigateTab: (tab: 'dashboard' | 'terminal' | 'simulation' | 'portfolio') => void;
 }
 
-// A palette of editorial / restrained colours for allocation bar
+// Editorial color palette for allocation bar
 const ALLOC_COLORS = ['#14532D', '#1E3A8A', '#881337', '#92400E', '#4B5563', '#166534', '#0F766E', '#4338CA'];
+
+// Yedek varlık listesi (screenerData henüz gelmediyse veya boşsa)
+const FALLBACK_UNIVERSE = [
+  { ticker: 'NVDA', name: 'Nvidia Corp.', last_close: 217.55, category: 'Tech' },
+  { ticker: 'AAPL', name: 'Apple Inc.', last_close: 319.97, category: 'Tech' },
+  { ticker: 'MSFT', name: 'Microsoft Corp.', last_close: 485.20, category: 'Tech' },
+  { ticker: 'TSLA', name: 'Tesla Inc.', last_close: 242.10, category: 'Auto' },
+  { ticker: 'BTC-USD', name: 'Bitcoin (USD)', last_close: 64250.00, category: 'Crypto' },
+  { ticker: 'THYAO.IS', name: 'Türk Hava Yolları', last_close: 296.50, category: 'BIST' },
+  { ticker: 'ASELS.IS', name: 'Aselsan', last_close: 68.40, category: 'BIST' },
+  { ticker: 'GARAN.IS', name: 'Garanti BBVA', last_close: 124.80, category: 'BIST' },
+  { ticker: 'TUPRS.IS', name: 'Tüpraş Petrol', last_close: 168.20, category: 'BIST' },
+];
 
 export const PortfolioPage: React.FC<PortfolioPageProps> = ({
   screenerData,
@@ -20,7 +33,10 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
   onSelectTicker,
   onNavigateTab,
 }) => {
-  const [selectedTickerToAdd, setSelectedTickerToAdd] = useState<string>(screenerData[0]?.ticker || 'NVDA');
+  // Kullanılabilir hisse listesi: screenerData varsa o, yoksa fallback
+  const availableUniverse = screenerData.length > 0 ? screenerData : FALLBACK_UNIVERSE;
+
+  const [selectedTickerToAdd, setSelectedTickerToAdd] = useState<string>(availableUniverse[0]?.ticker || 'NVDA');
   const [customTickerMode, setCustomTickerMode]       = useState<boolean>(false);
   const [customTickerInput, setCustomTickerInput]     = useState<string>('');
   const [customPriceInput, setCustomPriceInput]       = useState<number>(100);
@@ -32,24 +48,24 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
   const [cashFeedback, setCashFeedback]               = useState<string | null>(null);
 
   /* ── Portfolio Stats ──────────────────────────────────────── */
-  const totalStockVal    = userPortfolio.positions.reduce((s, p) => s + p.shares * p.current_price, 0);
+  const totalStockVal     = userPortfolio.positions.reduce((s, p) => s + p.shares * p.current_price, 0);
   const totalPortfolioVal = userPortfolio.cash + totalStockVal;
-  const initialCap       = userPortfolio.initial_capital;
-  const totalGain        = totalPortfolioVal - initialCap;
-  const totalReturnPct   = initialCap > 0 ? (totalGain / initialCap) * 100 : 0;
-  const isPositive       = totalReturnPct >= 0;
+  const initialCap        = userPortfolio.initial_capital;
+  const totalGain         = totalPortfolioVal - initialCap;
+  const totalReturnPct    = initialCap > 0 ? (totalGain / initialCap) * 100 : 0;
+  const isPositive        = totalReturnPct >= 0;
 
   const weightedBeta = totalStockVal > 0
     ? userPortfolio.positions.reduce((s, p) => {
-        const item = screenerData.find((x) => x.ticker === p.ticker);
-        return s + (p.shares * p.current_price / totalStockVal) * (item?.beta ?? 1);
+        const item = availableUniverse.find((x) => x.ticker === p.ticker);
+        return s + (p.shares * p.current_price / totalStockVal) * ((item as any)?.beta ?? 1);
       }, 0)
     : 0;
 
   const weightedAlpha = totalStockVal > 0
     ? userPortfolio.positions.reduce((s, p) => {
-        const item = screenerData.find((x) => x.ticker === p.ticker);
-        return s + (p.shares * p.current_price / totalStockVal) * (item?.alpha_20d_cum ?? 0);
+        const item = availableUniverse.find((x) => x.ticker === p.ticker);
+        return s + (p.shares * p.current_price / totalStockVal) * ((item as any)?.alpha_20d_cum ?? 0);
       }, 0)
     : 0;
 
@@ -58,12 +74,11 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
     if (e) e.preventDefault();
     const amount = Number(cashAmountInput);
     if (isNaN(amount) || amount <= 0) {
-      setCashFeedback('Lütfen geçerli bir tutar girin.');
+      setCashFeedback('Lütfen geçerli bir pozitif tutar girin.');
       return;
     }
 
     if (cashAction === 'add') {
-      // Fon Girişi: Nakit ve ana sermaye artırılır
       const newCash = userPortfolio.cash + amount;
       const newInitial = userPortfolio.initial_capital + amount;
       onUpdatePortfolio({
@@ -71,11 +86,10 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
         cash: newCash,
         initial_capital: newInitial,
       });
-      setCashFeedback(`+${amount.toLocaleString('tr-TR')} ₺ nakit başarıyla eklendi.`);
+      setCashFeedback(`✓ +${amount.toLocaleString('tr-TR')} ₺ fon girişi tamamlandı.`);
     } else {
-      // Fon Çıkışı: Serbest nakit kontrolü
       if (amount > userPortfolio.cash) {
-        setCashFeedback(`Yetersiz serbest nakit! Mevcut nakit: ${userPortfolio.cash.toLocaleString('tr-TR')} ₺`);
+        setCashFeedback(`⚠️ Yetersiz serbest nakit! Mevcut nakit: ${userPortfolio.cash.toLocaleString('tr-TR')} ₺`);
         return;
       }
       const newCash = userPortfolio.cash - amount;
@@ -85,7 +99,7 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
         cash: newCash,
         initial_capital: newInitial,
       });
-      setCashFeedback(`-${amount.toLocaleString('tr-TR')} ₺ nakit çekimi gerçekleştirildi.`);
+      setCashFeedback(`✓ -${amount.toLocaleString('tr-TR')} ₺ fon çıkışı gerçekleştirildi.`);
     }
 
     setTimeout(() => setCashFeedback(null), 4000);
@@ -102,10 +116,10 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
         cash: newCash,
         initial_capital: newInitial,
       });
-      setCashFeedback(`+${amount.toLocaleString('tr-TR')} ₺ nakit eklendi.`);
+      setCashFeedback(`✓ +${amount.toLocaleString('tr-TR')} ₺ nakit eklendi.`);
     } else {
       if (amount > userPortfolio.cash) {
-        setCashFeedback(`Yetersiz nakit! En fazla ${userPortfolio.cash.toLocaleString('tr-TR')} ₺ çekebilirsiniz.`);
+        setCashFeedback(`⚠️ Yetersiz nakit! En fazla ${userPortfolio.cash.toLocaleString('tr-TR')} ₺ çekebilirsiniz.`);
         return;
       }
       const newCash = userPortfolio.cash - amount;
@@ -115,7 +129,7 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
         cash: newCash,
         initial_capital: newInitial,
       });
-      setCashFeedback(`-${amount.toLocaleString('tr-TR')} ₺ nakit çekildi.`);
+      setCashFeedback(`✓ -${amount.toLocaleString('tr-TR')} ₺ nakit çekildi.`);
     }
     setTimeout(() => setCashFeedback(null), 4000);
   };
@@ -143,7 +157,7 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
       targetName = targetTicker;
       targetCategory = targetTicker.endsWith('.IS') ? 'BIST' : (targetTicker.includes('-USD') ? 'Crypto' : 'Global');
     } else {
-      const asset = screenerData.find((s) => s.ticker === selectedTickerToAdd);
+      const asset = availableUniverse.find((s) => s.ticker === selectedTickerToAdd);
       if (!asset) return;
       targetPrice = asset.last_close;
       targetName = asset.name;
@@ -287,12 +301,10 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
 
         {/* Stacked allocation bar */}
         <div style={{ height: 10, background: 'var(--rule-light)', display: 'flex', overflow: 'hidden', borderRadius: 2 }}>
-          {/* Nakit bar */}
           <div
             style={{ width: `${cashPct}%`, background: 'var(--rule-strong)', transition: 'width 0.4s ease' }}
             title={`Nakit: ${cashPct.toFixed(1)}%`}
           />
-          {/* Pozisyon barları */}
           {userPortfolio.positions.map((pos, i) => {
             const posVal = pos.shares * pos.current_price;
             const posPct = totalPortfolioVal > 0 ? (posVal / totalPortfolioVal) * 100 : 0;
@@ -343,31 +355,62 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
             </div>
           </div>
 
-          {/* Eylem Seçici (Nakit Ekle vs Çıkar) */}
-          <div style={{ display: 'flex', gap: 4, background: 'var(--paper-elevated)', padding: 3, borderRadius: 'var(--radius-sm)' }}>
+          {/* Zarif Segmented Switch */}
+          <div style={{
+            display: 'flex',
+            gap: 6,
+            background: 'var(--paper-elevated)',
+            padding: '4px 6px',
+            borderRadius: 'var(--radius-sm)',
+            border: '1px solid var(--rule-light)'
+          }}>
             <button
-              className={`filter-btn ${cashAction === 'add' ? 'active' : ''}`}
               onClick={() => setCashAction('add')}
-              style={{ fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: 5 }}
+              style={{
+                fontSize: '0.78rem',
+                fontWeight: 600,
+                padding: '5px 12px',
+                borderRadius: 'var(--radius-xs)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                border: cashAction === 'add' ? '1px solid var(--forest-gain)' : '1px solid transparent',
+                background: cashAction === 'add' ? 'rgba(20, 83, 45, 0.1)' : 'transparent',
+                color: cashAction === 'add' ? 'var(--forest-gain)' : 'var(--ink-secondary)',
+                transition: 'all 0.15s ease'
+              }}
             >
-              <PlusCircle size={13} style={{ color: 'var(--forest-gain)' }} />
+              <PlusCircle size={13} />
               Nakit Ekle (Fon Girişi)
             </button>
             <button
-              className={`filter-btn ${cashAction === 'withdraw' ? 'active' : ''}`}
               onClick={() => setCashAction('withdraw')}
-              style={{ fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: 5 }}
+              style={{
+                fontSize: '0.78rem',
+                fontWeight: 600,
+                padding: '5px 12px',
+                borderRadius: 'var(--radius-xs)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                border: cashAction === 'withdraw' ? '1px solid var(--madder-loss)' : '1px solid transparent',
+                background: cashAction === 'withdraw' ? 'rgba(136, 19, 55, 0.1)' : 'transparent',
+                color: cashAction === 'withdraw' ? 'var(--madder-loss)' : 'var(--ink-secondary)',
+                transition: 'all 0.15s ease'
+              }}
             >
-              <MinusCircle size={13} style={{ color: 'var(--madder-loss)' }} />
+              <MinusCircle size={13} />
               Nakit Çıkar (Fon Çıkışı)
             </button>
           </div>
         </div>
 
-        {/* Hızlı İşlem Butonları & Tutar Girişi */}
+        {/* Form & Hızlı Kısayollar */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
-          <form onSubmit={handleCashTransaction} style={{ display: 'flex', alignItems: 'center', gap: 8, flex: '1 1 280px' }}>
-            <div style={{ position: 'relative', flex: 1 }}>
+          <form onSubmit={handleCashTransaction} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ position: 'relative', width: 180 }}>
               <input
                 type="number"
                 min={1}
@@ -375,8 +418,8 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
                 value={cashAmountInput}
                 onChange={(e) => setCashAmountInput(Number(e.target.value))}
                 className="search-input"
-                style={{ width: '100%', padding: '8px 32px 8px 12px', fontSize: '0.85rem' }}
-                placeholder="Tutar girin (₺)..."
+                style={{ width: '100%', padding: '8px 30px 8px 12px', fontSize: '0.85rem' }}
+                placeholder="Tutar (₺)..."
               />
               <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', fontSize: '0.8rem', color: 'var(--ink-muted)', fontWeight: 600 }}>
                 ₺
@@ -389,14 +432,11 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
                 background: cashAction === 'add' ? 'var(--forest-gain)' : 'var(--madder-loss)',
                 borderColor: cashAction === 'add' ? 'var(--forest-gain)' : 'var(--madder-loss)',
                 fontSize: '0.8rem',
-                padding: '8px 16px'
+                padding: '8px 16px',
+                whiteSpace: 'nowrap'
               }}
             >
-              {cashAction === 'add' ? (
-                <>+ Nakit Ekle</>
-              ) : (
-                <>- Nakit Çıkar</>
-              )}
+              {cashAction === 'add' ? '+ Nakit Ekle' : '- Nakit Çıkar'}
             </button>
           </form>
 
@@ -442,13 +482,14 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
         {cashFeedback && (
           <div style={{
             marginTop: 12,
-            padding: '6px 12px',
+            padding: '6px 14px',
             borderRadius: 'var(--radius-xs)',
             background: cashFeedback.includes('Yetersiz') ? 'var(--madder-tint)' : 'var(--forest-tint)',
             color: cashFeedback.includes('Yetersiz') ? 'var(--madder-loss)' : 'var(--forest-gain)',
             fontSize: '0.78rem',
             fontWeight: 600,
-            display: 'inline-block'
+            display: 'inline-block',
+            border: `1px solid ${cashFeedback.includes('Yetersiz') ? 'var(--madder-rule)' : 'var(--forest-gain)'}`
           }}>
             {cashFeedback}
           </div>
@@ -479,16 +520,16 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
               </div>
             </div>
           ) : (
-            <table className="broadsheet-table">
+            <table className="broadsheet-table" style={{ width: '100%', tableLayout: 'auto' }}>
               <thead>
                 <tr>
-                  <th style={{ paddingLeft: '2rem' }}>Varlık</th>
-                  <th>Adet</th>
-                  <th>Maliyet (₺)</th>
-                  <th>Güncel (₺)</th>
-                  <th>Değer (₺)</th>
-                  <th>Kar / Zarar</th>
-                  <th style={{ textAlign: 'right', paddingRight: '2rem' }}>İşlem</th>
+                  <th style={{ paddingLeft: '1.5rem', width: '25%' }}>Varlık</th>
+                  <th style={{ textAlign: 'right', padding: '0.6rem 0.8rem' }}>Adet</th>
+                  <th style={{ textAlign: 'right', padding: '0.6rem 0.8rem' }}>Maliyet (₺)</th>
+                  <th style={{ textAlign: 'right', padding: '0.6rem 0.8rem' }}>Güncel (₺)</th>
+                  <th style={{ textAlign: 'right', padding: '0.6rem 0.8rem' }}>Değer (₺)</th>
+                  <th style={{ textAlign: 'center', padding: '0.6rem 0.8rem' }}>Kar / Zarar</th>
+                  <th style={{ textAlign: 'right', paddingRight: '1.5rem' }}>İşlem</th>
                 </tr>
               </thead>
               <tbody>
@@ -500,7 +541,7 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
 
                   return (
                     <tr key={pos.ticker}>
-                      <td style={{ paddingLeft: '2rem' }}>
+                      <td style={{ paddingLeft: '1.5rem' }}>
                         <div
                           style={{ cursor: 'pointer' }}
                           onClick={() => { onSelectTicker(pos.ticker); onNavigateTab('terminal'); }}
@@ -512,16 +553,24 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
                           <div style={{ fontSize: '0.72rem', color: 'var(--ink-muted)', marginTop: 1 }}>{pos.name}</div>
                         </div>
                       </td>
-                      <td className="tabular" style={{ fontWeight: 600, color: 'var(--ink-primary)' }}>{pos.shares}</td>
-                      <td className="tabular" style={{ color: 'var(--ink-secondary)' }}>{pos.buy_price.toFixed(2)}</td>
-                      <td className="tabular" style={{ fontWeight: 700, color: 'var(--ink-primary)' }}>{pos.current_price.toFixed(2)}</td>
-                      <td className="tabular" style={{ fontWeight: 600, color: 'var(--cobalt)' }}>{marketVal.toFixed(0)} ₺</td>
-                      <td>
+                      <td className="tabular" style={{ fontWeight: 600, color: 'var(--ink-primary)', textAlign: 'right', padding: '0.6rem 0.8rem' }}>
+                        {pos.shares}
+                      </td>
+                      <td className="tabular" style={{ color: 'var(--ink-secondary)', textAlign: 'right', padding: '0.6rem 0.8rem' }}>
+                        {pos.buy_price.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
+                      <td className="tabular" style={{ fontWeight: 700, color: 'var(--ink-primary)', textAlign: 'right', padding: '0.6rem 0.8rem' }}>
+                        {pos.current_price.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
+                      <td className="tabular" style={{ fontWeight: 600, color: 'var(--cobalt)', textAlign: 'right', padding: '0.6rem 0.8rem' }}>
+                        {marketVal.toLocaleString('tr-TR', { maximumFractionDigits: 0 })} ₺
+                      </td>
+                      <td style={{ textAlign: 'center', padding: '0.6rem 0.8rem' }}>
                         <span className={`signal ${isProfitable ? 'signal-buy' : 'signal-sell'} tabular`}>
                           {isProfitable ? '+' : ''}{gainPct.toFixed(2)}%
                         </span>
                       </td>
-                      <td style={{ textAlign: 'right', paddingRight: '2rem' }}>
+                      <td style={{ textAlign: 'right', paddingRight: '1.5rem' }}>
                         <button
                           onClick={() => handleRemovePosition(pos.ticker)}
                           className="btn btn-secondary"
@@ -575,7 +624,7 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
                     outline: 'none',
                   }}
                 >
-                  {screenerData.map((item) => (
+                  {availableUniverse.map((item) => (
                     <option key={item.ticker} value={item.ticker} style={{ background: '#FAF8F3' }}>
                       {item.ticker} — {item.name} ({item.last_close.toFixed(2)} ₺)
                     </option>
@@ -620,9 +669,10 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
               </label>
               <input
                 type="number"
-                min={1}
+                min={0.001}
+                step="any"
                 value={sharesToAdd}
-                onChange={(e) => setSharesToAdd(Math.max(1, Number(e.target.value)))}
+                onChange={(e) => setSharesToAdd(Math.max(0.001, Number(e.target.value)))}
                 className="search-input"
                 style={{ width: '100%', padding: '8px 10px' }}
               />
@@ -634,7 +684,7 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
               if (customTickerMode) {
                 price = Number(customPriceInput) || 0;
               } else {
-                const item = screenerData.find((s) => s.ticker === selectedTickerToAdd);
+                const item = availableUniverse.find((s) => s.ticker === selectedTickerToAdd);
                 price = item ? item.last_close : 0;
               }
               const cost = price * sharesToAdd;

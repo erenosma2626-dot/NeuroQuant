@@ -321,7 +321,7 @@ export const Navigation: React.FC<NavigationProps> = ({
           return (
             <button
               key={tab.id}
-              className={`masthead-nav-item ${isActive ? 'active' : ''}`}
+              className={`nav-tab ${isActive ? 'active' : ''}`}
               onClick={() => onSelectTab(tab.id)}
             >
               {tab.label}
