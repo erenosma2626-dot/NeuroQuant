@@ -208,3 +208,39 @@ export interface UserPortfolio {
   positions: PortfolioPosition[];
 }
 
+export interface MacroBarometerItem {
+  key: string;
+  name: string;
+  symbol: string;
+  value: number;
+  unit: string;
+  change_pct: number;
+  change_5d: number;
+  status: string;
+  tag: string;
+  is_risk_on: boolean;
+}
+
+export interface MacroRegimeBreakdown {
+  vix_contribution: number;
+  tnx_contribution: number;
+  oil_contribution: number;
+  safe_haven_contribution: number;
+  news_sentiment_contribution: number;
+}
+
+export interface MacroBarometerData {
+  as_of: string;
+  composite_score: number;
+  regime_label: string;
+  regime_badge: string;
+  regime_color: string;
+  investor_note: string;
+  barometers: MacroBarometerItem[];
+  breakdown: MacroRegimeBreakdown;
+  global_news_sentiment: {
+    score: number;
+    label: string;
+    total_news_count: number;
+  };
+}

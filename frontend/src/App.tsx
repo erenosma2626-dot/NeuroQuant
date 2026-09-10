@@ -8,6 +8,7 @@ import { QuantMatrix } from './components/QuantMatrix';
 import { SimulationLab } from './components/SimulationLab';
 import { FundamentalRadar } from './components/FundamentalRadar';
 import { AgentTerminal } from './components/AgentTerminal';
+import { NewsFeed } from './components/NewsFeed';
 import type { 
   MarketData, 
   ForecastData, 
@@ -15,41 +16,43 @@ import type {
   SimulationData, 
   AgentCommentData,
   ScreenerItem,
-  UserPortfolio
+  UserPortfolio,
+  MacroBarometerData,
+  NewsData,
 } from './types';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 
 const DEFAULT_PORTFOLIO: UserPortfolio = {
-  name: 'Kurumsal Ana Portföy',
+  name: 'Wall Street Portföyü',
   initial_capital: 10000,
-  cash: 4200,
+  cash: 3400,
   positions: [
     {
       ticker: 'NVDA',
       name: 'Nvidia Corporation',
-      category: 'Tech',
-      shares: 12,
-      buy_price: 215.00,
-      current_price: 230.36,
-      weight_pct: 27.6,
+      category: 'Semis',
+      shares: 20,
+      buy_price: 122.50,
+      current_price: 128.50,
+      weight_pct: 38.0,
     },
     {
-      ticker: 'THYAO.IS',
-      name: 'Türk Hava Yolları',
-      category: 'BIST',
-      shares: 6,
-      buy_price: 285.00,
-      current_price: 296.50,
-      weight_pct: 17.8,
+      ticker: 'AAPL',
+      name: 'Apple Inc.',
+      category: 'Tech',
+      shares: 10,
+      buy_price: 218.00,
+      current_price: 224.20,
+      weight_pct: 33.0,
     },
     {
       ticker: 'BTC-USD',
       name: 'Bitcoin (USD)',
       category: 'Crypto',
-      shares: 0.02,
-      buy_price: 61000.00,
-      current_price: 64250.00,
-      weight_pct: 12.8,
+      shares: 0.015,
+      buy_price: 58500.00,
+      current_price: 62450.00,
+      weight_pct: 13.8,
     },
   ],
 };
@@ -68,6 +71,11 @@ export const App: React.FC = () => {
       return DEFAULT_PORTFOLIO;
     }
   });
+
+  // Macro Barometer & News Feeds
+  const [macroData, setMacroData] = useState<MacroBarometerData | null>(null);
+  const [tickerNews, setTickerNews] = useState<NewsData | null>(null);
+  const [globalNews, setGlobalNews] = useState<NewsData | null>(null);
 
   // Per-Ticker Data
   const [marketData, setMarketData] = useState<MarketData | null>(null);
@@ -89,16 +97,29 @@ export const App: React.FC = () => {
     }
   };
 
-  // 1. Screener Evrenini Çek
+  // 1. Screener Evrenini, Makro Barometreleri ve Küresel Haberleri Çek
   const fetchScreener = async () => {
     try {
-      const res = await fetch('/api/market/screener/all');
-      if (res.ok) {
-        const data = await res.json();
+      const [scrRes, macroRes, globNewsRes] = await Promise.all([
+        fetch('/api/market/screener/all').catch(() => null),
+        fetch('/api/macro/barometers').catch(() => null),
+        fetch('/api/news/global').catch(() => null),
+      ]);
+
+      if (scrRes && scrRes.ok) {
+        const data = await scrRes.json();
         setScreenerData(data);
       }
+      if (macroRes && macroRes.ok) {
+        const mData = await macroRes.json();
+        setMacroData(mData);
+      }
+      if (globNewsRes && globNewsRes.ok) {
+        const gData = await globNewsRes.json();
+        setGlobalNews(gData);
+      }
     } catch (err) {
-      console.warn('Screener fetch failed', err);
+      console.warn('Initial data fetch failed', err);
     }
   };
 
@@ -116,14 +137,16 @@ export const App: React.FC = () => {
     setFundamentalsData(null);
     setSimulationData(null);
     setAgentComment(null);
+    setTickerNews(null);
 
     try {
-      const [mRes, fRes, fundRes, simRes, agentRes] = await Promise.all([
+      const [mRes, fRes, fundRes, simRes, agentRes, newsRes] = await Promise.all([
         fetch(`/api/market/${ticker}`).catch(() => null),
         fetch(`/api/forecast/${ticker}`).catch(() => null),
         fetch(`/api/fundamentals/${ticker}`).catch(() => null),
         fetch(`/api/simulation/${ticker}`).catch(() => null),
         fetch(`/api/agent/comment/${ticker}`).catch(() => null),
+        fetch(`/api/news/${ticker}`).catch(() => null),
       ]);
 
       if (!mRes || !mRes.ok) {
@@ -143,13 +166,12 @@ export const App: React.FC = () => {
               : item
           );
         }
-        const isBist = cleanT.endsWith('.IS');
         const isCrypto = cleanT.includes('-USD');
         const newItem: ScreenerItem = {
           ticker: cleanT,
           name: cleanT,
-          category: isBist ? 'BIST' : (isCrypto ? 'Crypto' : 'Global'),
-          sector: isBist ? 'Borsa İstanbul' : (isCrypto ? 'Kripto Varlık' : 'Küresel Piyasa'),
+          category: isCrypto ? 'Crypto' : 'Tech',
+          sector: isCrypto ? 'Kripto Varlık' : 'Wall Street / US Equity',
           last_close: mData.current_price,
           change_pct: mData.change_pct,
           dist_sma200_pct: mData.dist_sma200_pct ?? 0,
@@ -167,6 +189,7 @@ export const App: React.FC = () => {
       if (fundRes && fundRes.ok) setFundamentalsData(await fundRes.json());
       if (simRes && simRes.ok) setSimulationData(await simRes.json());
       if (agentRes && agentRes.ok) setAgentComment(await agentRes.json());
+      if (newsRes && newsRes.ok) setTickerNews(await newsRes.json());
 
     } catch (err: any) {
       console.error(err);
@@ -225,6 +248,7 @@ export const App: React.FC = () => {
             userPortfolio={userPortfolio}
             onSelectTicker={(t) => setCurrentTicker(t)}
             onNavigateTab={(tab) => setActiveTab(tab)}
+            macroData={macroData}
           />
         )}
 
@@ -252,6 +276,9 @@ export const App: React.FC = () => {
                 </div>
 
                 {agentComment && <AgentTerminal key={`agent-${currentTicker}`} comment={agentComment} />}
+
+                {/* Dual-Mode Broadsheet Haber & Duygu Beslemesi */}
+                <NewsFeed tickerNews={tickerNews} globalNews={globalNews} currentTicker={currentTicker} />
               </>
             )}
           </div>

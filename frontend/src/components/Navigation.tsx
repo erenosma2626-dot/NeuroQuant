@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, ArrowRight, TrendingUp, X } from 'lucide-react';
+import { Search, ArrowRight, X } from 'lucide-react';
 import type { ScreenerItem, MarketData } from '../types';
 
 interface NavigationProps {
@@ -18,19 +18,20 @@ const TABS: { id: 'dashboard' | 'terminal' | 'simulation' | 'portfolio'; label: 
   { id: 'portfolio',  label: 'Portföy Atölyesi'     },
 ];
 
-// Popüler BIST ve Küresel Örnekler
+// Popüler Wall Street ve Kripto Varlıkları
 const POPULAR_SUGGESTIONS = [
-  { ticker: 'NVDA', name: 'Nvidia Corp.', category: 'Tech' },
+  { ticker: 'NVDA', name: 'Nvidia Corp. (AI Leader)', category: 'Tech' },
   { ticker: 'AAPL', name: 'Apple Inc.', category: 'Tech' },
   { ticker: 'MSFT', name: 'Microsoft Corp.', category: 'Tech' },
-  { ticker: 'TSLA', name: 'Tesla Inc.', category: 'Auto' },
+  { ticker: 'AMZN', name: 'Amazon.com Inc.', category: 'Tech' },
+  { ticker: 'GOOGL', name: 'Alphabet Inc.', category: 'Tech' },
+  { ticker: 'META', name: 'Meta Platforms Inc.', category: 'Tech' },
+  { ticker: 'TSLA', name: 'Tesla Inc.', category: 'Tech' },
+  { ticker: 'AMD', name: 'Advanced Micro Devices', category: 'Semis' },
+  { ticker: 'AVGO', name: 'Broadcom Inc.', category: 'Semis' },
+  { ticker: 'JPM', name: 'JPMorgan Chase', category: 'Finance' },
   { ticker: 'BTC-USD', name: 'Bitcoin (USD)', category: 'Crypto' },
   { ticker: 'ETH-USD', name: 'Ethereum (USD)', category: 'Crypto' },
-  { ticker: 'THYAO.IS', name: 'Türk Hava Yolları', category: 'BIST' },
-  { ticker: 'ASELS.IS', name: 'Aselsan', category: 'BIST' },
-  { ticker: 'GARAN.IS', name: 'Garanti BBVA', category: 'BIST' },
-  { ticker: 'TUPRS.IS', name: 'Tüpraş Petrol', category: 'BIST' },
-  { ticker: 'EREGL.IS', name: 'Ereğli Demir Çelik', category: 'BIST' },
 ];
 
 export const Navigation: React.FC<NavigationProps> = ({
@@ -70,13 +71,6 @@ export const Navigation: React.FC<NavigationProps> = ({
           u.sector.toLowerCase().includes(query.toLowerCase())
       ).slice(0, 8)
     : [];
-
-  // BIST akıllı önerisi: Eğer kullanıcı .IS yazmadıysa ve harflerden oluşuyorsa
-  const showBistSuggestion =
-    cleanQuery.length >= 3 &&
-    !cleanQuery.includes('.') &&
-    !cleanQuery.includes('-') &&
-    !cleanQuery.endsWith('.IS');
 
   // Exact match var mı?
   const hasExactMatch = filtered.some((u) => u.ticker.toUpperCase() === cleanQuery);
@@ -261,33 +255,6 @@ export const Navigation: React.FC<NavigationProps> = ({
                       </div>
                     </div>
                     <ArrowRight size={13} style={{ color: 'var(--forest-gain)' }} />
-                  </div>
-                )}
-
-                {/* 2. BIST Akıllı Tamamlama Önerisi (.IS) */}
-                {showBistSuggestion && (
-                  <div
-                    className="search-result-item"
-                    onClick={() => handleSelect(`${cleanQuery}.IS`)}
-                    style={{
-                      borderBottom: '1px solid var(--rule-light)',
-                      padding: '0.6rem 0.95rem'
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <TrendingUp size={13} style={{ color: 'var(--cobalt)' }} />
-                      <div>
-                        <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--ink-primary)' }}>
-                          {cleanQuery}.IS
-                        </div>
-                        <div style={{ fontSize: '0.7rem', color: 'var(--ink-muted)' }}>
-                          Borsa İstanbul (BIST) Pay Piyasası
-                        </div>
-                      </div>
-                    </div>
-                    <span style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--cobalt)', textTransform: 'uppercase' }}>
-                      BIST
-                    </span>
                   </div>
                 )}
 

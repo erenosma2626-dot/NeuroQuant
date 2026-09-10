@@ -1008,6 +1008,24 @@ h1, h2, h3 {
 
 .table-search::placeholder { color: var(--ink-faint); }
 
+.macro-chip {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--ink-secondary);
+  background: var(--paper-card);
+  border: 1px solid var(--rule-strong);
+  padding: 3px 8px;
+  border-radius: 3px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.macro-chip strong {
+  color: var(--ink-primary);
+  font-weight: 700;
+}
+
 /* ── Responsive ─────────────────────────────────────────────────────────── */
 @media (max-width: 1024px) {
   .masthead-top { padding: 0.9rem 1.25rem; }

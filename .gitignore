@@ -16,3 +16,8 @@ Thumbs.db
 frontend/node_modules/
 frontend/dist/
 Icon?
+
+# Pickles / Local Artifacts
+*.pkl
+
+#

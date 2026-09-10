@@ -1,20 +1,24 @@
 import React, { useState, useMemo } from 'react';
-import type { ScreenerItem, UserPortfolio } from '../types';
+import type { ScreenerItem, UserPortfolio, MacroBarometerData } from '../types';
+import { MacroBarometer } from './MacroBarometer';
 
 interface DashboardPageProps {
   screenerData: ScreenerItem[];
   userPortfolio: UserPortfolio;
   onSelectTicker: (ticker: string) => void;
   onNavigateTab: (tab: 'dashboard' | 'terminal' | 'simulation' | 'portfolio') => void;
+  macroData?: MacroBarometerData | null;
 }
 
 type SortField = 'last_close' | 'change_pct' | 'dist_sma200_pct' | 'alpha_20d_cum' | 'confidence_score';
 
 const CATEGORIES = [
-  { id: 'ALL',    label: 'Tüm Evren' },
-  { id: 'BIST',   label: 'BIST 100'  },
-  { id: 'Tech',   label: 'ABD Tekno' },
-  { id: 'Crypto', label: 'Kripto'    },
+  { id: 'ALL',        label: 'Tüm Evren' },
+  { id: 'Tech',       label: 'Mega-Cap Tech' },
+  { id: 'Semis',      label: 'Yarı İletken (AI)' },
+  { id: 'Finance',    label: 'Wall Street Finans' },
+  { id: 'Healthcare', label: 'Sağlık / İlaç' },
+  { id: 'Crypto',     label: 'Kripto Varlık' },
 ];
 
 function signalClass(signal: string): string {
@@ -28,6 +32,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   userPortfolio,
   onSelectTicker,
   onNavigateTab,
+  macroData,
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [sortField, setSortField]               = useState<SortField>('confidence_score');
@@ -80,6 +85,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem', animation: 'fadeUp 0.35s ease' }}>
 
       {/* ══════════════════════════════════════════════════════════
+          SECTION 0 — GLOBAL MACRO BAROMETERS & RORO REGIME
+         ══════════════════════════════════════════════════════════ */}
+      {macroData && <MacroBarometer data={macroData} />}
+
+      {/* ══════════════════════════════════════════════════════════
           SECTION 1 — PORTFOLIO OVERVIEW BAR
          ══════════════════════════════════════════════════════════ */}
       <div
@@ -114,9 +124,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           <div className="metric-block">
             <div className="metric-label">Toplam Değer</div>
             <div className="metric-value tabular">
-              {totalVal.toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ₺
+              ${totalVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
-            <div className="metric-sub">Nakit + Hisse</div>
+            <div className="metric-sub">Nakit + Hisse Senedi</div>
           </div>
           <div className="metric-block">
             <div className="metric-label">Net Getiri</div>
@@ -128,9 +138,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           <div className="metric-block">
             <div className="metric-label">Nakit Rezervi</div>
             <div className="metric-value tabular">
-              {userPortfolio.cash.toLocaleString('tr-TR')} ₺
+              ${userPortfolio.cash.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
-            <div className="metric-sub">Kullanılabilir</div>
+            <div className="metric-sub">Kullanılabilir USD</div>
           </div>
           <div className="metric-block">
             <div className="metric-label">Pozisyon Sayısı</div>
@@ -140,7 +150,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           <div className="metric-block">
             <div className="metric-label">Hisse Değeri</div>
             <div className="metric-value tabular">
-              {stockVal.toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ₺
+              ${stockVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
             <div className="metric-sub">Piyasa değeri</div>
           </div>
@@ -361,7 +371,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                     {/* Price */}
                     <td>
                       <span className="tabular" style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--ink-primary)' }}>
-                        {item.last_close.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        ${item.last_close.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
                     </td>
 

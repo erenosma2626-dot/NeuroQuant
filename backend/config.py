@@ -21,30 +21,31 @@ class Settings(BaseModel):
         "*"
     ]
     
-    # Sektörel / Pazar Referans Haritası
+    # Sektörel / Pazar Referans Haritası (Wall Street Sektör ETF'leri)
     BENCHMARK_MAP: Dict[str, str] = {
         "NVDA": "SMH",
+        "AMD": "SMH",
+        "AVGO": "SMH",
+        "TSM": "SMH",
         "AAPL": "QQQ",
         "MSFT": "QQQ",
-        "AMD": "SMH",
         "GOOGL": "QQQ",
+        "META": "QQQ",
         "TSLA": "QQQ",
+        "AMZN": "XLY",
+        "JPM": "XLF",
+        "GS": "XLF",
+        "V": "XLF",
+        "LLY": "XLV",
         "BTC-USD": "BTC-USD",
         "ETH-USD": "BTC-USD",
-        "SOL-USD": "BTC-USD",
-        "THYAO.IS": "XU100.IS",
-        "EREGL.IS": "XU100.IS",
-        "ASELS.IS": "XU100.IS",
-        "TUPRS.IS": "XU100.IS",
-        "BIMAS.IS": "XU100.IS"
+        "SOL-USD": "BTC-USD"
     }
 
     def get_benchmark(self, ticker: str) -> str:
         clean_t = ticker.upper()
         if clean_t in self.BENCHMARK_MAP:
             return self.BENCHMARK_MAP[clean_t]
-        if clean_t.endswith(".IS"):
-            return "XU100.IS"
         if "-USD" in clean_t:
             return "BTC-USD"
         return "SPY"

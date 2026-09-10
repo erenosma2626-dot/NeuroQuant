@@ -218,7 +218,7 @@ export const SimulationLab: React.FC<SimulationLabProps> = ({ simulation }) => {
             <text x={pad.left - 8} y={y10k - 4}
               fill="#57534E" fontSize="9.5" textAnchor="end"
               fontFamily="'JetBrains Mono', monospace" fontWeight="600">
-              10.000 ₺
+              10.000 $
             </text>
 
             {/* Buy & Hold line — stone dashed */}

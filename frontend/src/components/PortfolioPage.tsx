@@ -15,15 +15,15 @@ const ALLOC_COLORS = ['#14532D', '#1E3A8A', '#881337', '#92400E', '#4B5563', '#1
 
 // Yedek varlık listesi (screenerData henüz gelmediyse veya boşsa)
 const FALLBACK_UNIVERSE = [
-  { ticker: 'NVDA', name: 'Nvidia Corp.', last_close: 217.55, category: 'Tech' },
-  { ticker: 'AAPL', name: 'Apple Inc.', last_close: 319.97, category: 'Tech' },
-  { ticker: 'MSFT', name: 'Microsoft Corp.', last_close: 485.20, category: 'Tech' },
-  { ticker: 'TSLA', name: 'Tesla Inc.', last_close: 242.10, category: 'Auto' },
-  { ticker: 'BTC-USD', name: 'Bitcoin (USD)', last_close: 64250.00, category: 'Crypto' },
-  { ticker: 'THYAO.IS', name: 'Türk Hava Yolları', last_close: 296.50, category: 'BIST' },
-  { ticker: 'ASELS.IS', name: 'Aselsan', last_close: 68.40, category: 'BIST' },
-  { ticker: 'GARAN.IS', name: 'Garanti BBVA', last_close: 124.80, category: 'BIST' },
-  { ticker: 'TUPRS.IS', name: 'Tüpraş Petrol', last_close: 168.20, category: 'BIST' },
+  { ticker: 'NVDA', name: 'Nvidia Corp.', last_close: 128.50, category: 'Semis' },
+  { ticker: 'AAPL', name: 'Apple Inc.', last_close: 224.20, category: 'Tech' },
+  { ticker: 'MSFT', name: 'Microsoft Corp.', last_close: 428.10, category: 'Tech' },
+  { ticker: 'AMZN', name: 'Amazon.com Inc.', last_close: 186.40, category: 'Consumer' },
+  { ticker: 'GOOGL', name: 'Alphabet Inc.', last_close: 177.30, category: 'Tech' },
+  { ticker: 'META', name: 'Meta Platforms', last_close: 512.80, category: 'Tech' },
+  { ticker: 'TSLA', name: 'Tesla Inc.', last_close: 218.40, category: 'Auto' },
+  { ticker: 'JPM', name: 'JPMorgan Chase', last_close: 214.60, category: 'Finance' },
+  { ticker: 'BTC-USD', name: 'Bitcoin USD', last_close: 62450.00, category: 'Crypto' },
 ];
 
 export const PortfolioPage: React.FC<PortfolioPageProps> = ({
@@ -86,10 +86,10 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
         cash: newCash,
         initial_capital: newInitial,
       });
-      setCashFeedback(`✓ +${amount.toLocaleString('tr-TR')} ₺ fon girişi tamamlandı.`);
+      setCashFeedback(`✓ +$${amount.toLocaleString('en-US')} fon girişi tamamlandı.`);
     } else {
       if (amount > userPortfolio.cash) {
-        setCashFeedback(`⚠️ Yetersiz serbest nakit! Mevcut nakit: ${userPortfolio.cash.toLocaleString('tr-TR')} ₺`);
+        setCashFeedback(`⚠️ Yetersiz serbest nakit! Mevcut nakit: $${userPortfolio.cash.toLocaleString('en-US')}`);
         return;
       }
       const newCash = userPortfolio.cash - amount;
@@ -99,7 +99,7 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
         cash: newCash,
         initial_capital: newInitial,
       });
-      setCashFeedback(`✓ -${amount.toLocaleString('tr-TR')} ₺ fon çıkışı gerçekleştirildi.`);
+      setCashFeedback(`✓ -$${amount.toLocaleString('en-US')} fon çıkışı gerçekleştirildi.`);
     }
 
     setTimeout(() => setCashFeedback(null), 4000);
@@ -116,10 +116,10 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
         cash: newCash,
         initial_capital: newInitial,
       });
-      setCashFeedback(`✓ +${amount.toLocaleString('tr-TR')} ₺ nakit eklendi.`);
+      setCashFeedback(`✓ +$${amount.toLocaleString('en-US')} nakit eklendi.`);
     } else {
       if (amount > userPortfolio.cash) {
-        setCashFeedback(`⚠️ Yetersiz nakit! En fazla ${userPortfolio.cash.toLocaleString('tr-TR')} ₺ çekebilirsiniz.`);
+        setCashFeedback(`⚠️ Yetersiz nakit! En fazla $${userPortfolio.cash.toLocaleString('en-US')} çekebilirsiniz.`);
         return;
       }
       const newCash = userPortfolio.cash - amount;
@@ -129,7 +129,7 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
         cash: newCash,
         initial_capital: newInitial,
       });
-      setCashFeedback(`✓ -${amount.toLocaleString('tr-TR')} ₺ nakit çekildi.`);
+      setCashFeedback(`✓ -$${amount.toLocaleString('en-US')} nakit çekildi.`);
     }
     setTimeout(() => setCashFeedback(null), 4000);
   };
@@ -155,7 +155,7 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
         return;
       }
       targetName = targetTicker;
-      targetCategory = targetTicker.endsWith('.IS') ? 'BIST' : (targetTicker.includes('-USD') ? 'Crypto' : 'Global');
+      targetCategory = targetTicker.includes('-USD') ? 'Crypto' : 'US Equities';
     } else {
       const asset = availableUniverse.find((s) => s.ticker === selectedTickerToAdd);
       if (!asset) return;
@@ -166,7 +166,7 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
 
     const cost = sharesToAdd * targetPrice;
     if (cost > userPortfolio.cash) {
-      alert(`Yetersiz nakit! Gerekli: ${cost.toFixed(2)} ₺, Mevcut: ${userPortfolio.cash.toFixed(2)} ₺. Lütfen önce "Nakit Ekle" ile portföyünüze fon sağlayın.`);
+      alert(`Yetersiz nakit! Gerekli: $${cost.toFixed(2)}, Mevcut: $${userPortfolio.cash.toFixed(2)}. Lütfen önce "Nakit Ekle" ile portföyünüze fon sağlayın.`);
       return;
     }
 
@@ -251,7 +251,7 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
                 Serbest Nakit
               </div>
               <div className="tabular" style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--ink-primary)' }}>
-                {userPortfolio.cash.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺
+                ${userPortfolio.cash.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </div>
             </div>
           </div>
@@ -262,8 +262,8 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
       <div className="panel" style={{ borderTop: '2px solid var(--ink-secondary)', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)' }}>
         <div className="metric-block">
           <div className="metric-label">Toplam Varlık Değeri</div>
-          <div className="metric-value tabular">{totalPortfolioVal.toLocaleString('tr-TR', { minimumFractionDigits: 0 })} ₺</div>
-          <div className="metric-sub">Sermaye Matrahı: {initialCap.toLocaleString('tr-TR')} ₺</div>
+          <div className="metric-value tabular">${totalPortfolioVal.toLocaleString('en-US', { minimumFractionDigits: 0 })}</div>
+          <div className="metric-sub">Sermaye Matrahı: ${initialCap.toLocaleString('en-US')}</div>
         </div>
         <div className="metric-block">
           <div className="metric-label">Net Getiri / Zarar</div>
@@ -271,7 +271,7 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
             {isPositive ? '+' : ''}{totalReturnPct.toFixed(2)}%
           </div>
           <div className="metric-sub" style={{ color: isPositive ? 'var(--forest-gain)' : 'var(--madder-loss)' }}>
-            {isPositive ? '+' : ''}{totalGain.toLocaleString('tr-TR', { minimumFractionDigits: 0 })} ₺
+            {isPositive ? '+' : ''}${totalGain.toLocaleString('en-US', { minimumFractionDigits: 0 })}
           </div>
         </div>
         <div className="metric-block">
@@ -295,7 +295,7 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
             Varlık Tahsis Dağılımı
           </div>
           <div className="tabular" style={{ fontSize: '0.75rem', color: 'var(--ink-muted)' }}>
-            Nakit: {userPortfolio.cash.toLocaleString('tr-TR', { maximumFractionDigits: 0 })} ₺ ({cashPct.toFixed(1)}%)
+            Nakit: ${userPortfolio.cash.toLocaleString('en-US', { maximumFractionDigits: 0 })} ({cashPct.toFixed(1)}%)
           </div>
         </div>
 
@@ -419,10 +419,10 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
                 onChange={(e) => setCashAmountInput(Number(e.target.value))}
                 className="search-input"
                 style={{ width: '100%', padding: '8px 30px 8px 12px', fontSize: '0.85rem' }}
-                placeholder="Tutar (₺)..."
+                placeholder="Tutar ($)..."
               />
               <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', fontSize: '0.8rem', color: 'var(--ink-muted)', fontWeight: 600 }}>
-                ₺
+                $
               </span>
             </div>
             <button
@@ -448,25 +448,25 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
             {cashAction === 'add' ? (
               <>
                 <button className="btn btn-secondary" onClick={() => handleQuickCash(1000, 'add')} style={{ fontSize: '0.72rem', padding: '4px 10px' }}>
-                  +1.000 ₺
+                  +$1,000
                 </button>
                 <button className="btn btn-secondary" onClick={() => handleQuickCash(5000, 'add')} style={{ fontSize: '0.72rem', padding: '4px 10px' }}>
-                  +5.000 ₺
+                  +$5,000
                 </button>
                 <button className="btn btn-secondary" onClick={() => handleQuickCash(10000, 'add')} style={{ fontSize: '0.72rem', padding: '4px 10px' }}>
-                  +10.000 ₺
+                  +$10,000
                 </button>
                 <button className="btn btn-secondary" onClick={() => handleQuickCash(50000, 'add')} style={{ fontSize: '0.72rem', padding: '4px 10px' }}>
-                  +50.000 ₺
+                  +$50,000
                 </button>
               </>
             ) : (
               <>
                 <button className="btn btn-secondary" onClick={() => handleQuickCash(1000, 'withdraw')} style={{ fontSize: '0.72rem', padding: '4px 10px' }}>
-                  -1.000 ₺
+                  -$1,000
                 </button>
                 <button className="btn btn-secondary" onClick={() => handleQuickCash(5000, 'withdraw')} style={{ fontSize: '0.72rem', padding: '4px 10px' }}>
-                  -5.000 ₺
+                  -$5,000
                 </button>
                 {userPortfolio.cash > 0 && (
                   <button className="btn btn-secondary" onClick={() => handleQuickCash(userPortfolio.cash, 'withdraw')} style={{ fontSize: '0.72rem', padding: '4px 10px', color: 'var(--madder-loss)' }}>
@@ -506,7 +506,7 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
               Mevcut Pozisyonlar ({userPortfolio.positions.length})
             </div>
             <div style={{ fontSize: '0.78rem', color: 'var(--ink-secondary)' }}>
-              Hisse Varlık Değeri: <strong className="tabular">{totalStockVal.toLocaleString('tr-TR', { minimumFractionDigits: 0 })} ₺</strong>
+              Hisse Varlık Değeri: <strong className="tabular">${totalStockVal.toLocaleString('en-US', { minimumFractionDigits: 0 })}</strong>
             </div>
           </div>
 
@@ -525,9 +525,9 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
                 <tr>
                   <th style={{ paddingLeft: '1.5rem', width: '25%' }}>Varlık</th>
                   <th style={{ textAlign: 'right', padding: '0.6rem 0.8rem' }}>Adet</th>
-                  <th style={{ textAlign: 'right', padding: '0.6rem 0.8rem' }}>Maliyet (₺)</th>
-                  <th style={{ textAlign: 'right', padding: '0.6rem 0.8rem' }}>Güncel (₺)</th>
-                  <th style={{ textAlign: 'right', padding: '0.6rem 0.8rem' }}>Değer (₺)</th>
+                  <th style={{ textAlign: 'right', padding: '0.6rem 0.8rem' }}>Maliyet ($)</th>
+                  <th style={{ textAlign: 'right', padding: '0.6rem 0.8rem' }}>Güncel ($)</th>
+                  <th style={{ textAlign: 'right', padding: '0.6rem 0.8rem' }}>Değer ($)</th>
                   <th style={{ textAlign: 'center', padding: '0.6rem 0.8rem' }}>Kar / Zarar</th>
                   <th style={{ textAlign: 'right', paddingRight: '1.5rem' }}>İşlem</th>
                 </tr>
@@ -557,13 +557,13 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
                         {pos.shares}
                       </td>
                       <td className="tabular" style={{ color: 'var(--ink-secondary)', textAlign: 'right', padding: '0.6rem 0.8rem' }}>
-                        {pos.buy_price.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        ${pos.buy_price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
                       <td className="tabular" style={{ fontWeight: 700, color: 'var(--ink-primary)', textAlign: 'right', padding: '0.6rem 0.8rem' }}>
-                        {pos.current_price.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        ${pos.current_price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
                       <td className="tabular" style={{ fontWeight: 600, color: 'var(--cobalt)', textAlign: 'right', padding: '0.6rem 0.8rem' }}>
-                        {marketVal.toLocaleString('tr-TR', { maximumFractionDigits: 0 })} ₺
+                        ${marketVal.toLocaleString('en-US', { maximumFractionDigits: 0 })}
                       </td>
                       <td style={{ textAlign: 'center', padding: '0.6rem 0.8rem' }}>
                         <span className={`signal ${isProfitable ? 'signal-buy' : 'signal-sell'} tabular`}>
@@ -626,7 +626,7 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
                 >
                   {availableUniverse.map((item) => (
                     <option key={item.ticker} value={item.ticker} style={{ background: '#FAF8F3' }}>
-                      {item.ticker} — {item.name} ({item.last_close.toFixed(2)} ₺)
+                      {item.ticker} — {item.name} (${item.last_close.toFixed(2)})
                     </option>
                   ))}
                 </select>
@@ -639,7 +639,7 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
                   </label>
                   <input
                     type="text"
-                    placeholder="Örn: AAPL, GARAN.IS, MSFT, KO..."
+                    placeholder="Örn: NVDA, AAPL, MSFT, GOOGL, AMZN, JPM..."
                     value={customTickerInput}
                     onChange={(e) => setCustomTickerInput(e.target.value.toUpperCase())}
                     className="search-input"
@@ -648,7 +648,7 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
                 </div>
                 <div>
                   <label style={{ fontSize: '0.65rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-muted)', display: 'block', marginBottom: 4 }}>
-                    Birim Alış Fiyatı (₺ / $)
+                    Birim Alış Fiyatı ($)
                   </label>
                   <input
                     type="number"
@@ -699,12 +699,12 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.76rem', marginBottom: 4 }}>
                     <span style={{ color: 'var(--ink-muted)' }}>Tahmini Alış Maliyeti</span>
                     <span className="tabular" style={{ fontWeight: 700, color: canAfford ? 'var(--forest-gain)' : 'var(--madder-loss)' }}>
-                      {cost.toFixed(2)} ₺
+                      ${cost.toFixed(2)}
                     </span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem' }}>
                     <span style={{ color: 'var(--ink-muted)' }}>Serbest Nakit</span>
-                    <span className="tabular" style={{ color: 'var(--ink-secondary)' }}>{userPortfolio.cash.toFixed(2)} ₺</span>
+                    <span className="tabular" style={{ color: 'var(--ink-secondary)' }}>${userPortfolio.cash.toFixed(2)}</span>
                   </div>
                 </div>
               );

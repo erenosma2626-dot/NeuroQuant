@@ -12,7 +12,8 @@ from backend.routers import (
     simulation,
     news,
     agent,
-    backtest
+    backtest,
+    macro
 )
 
 app = FastAPI(
@@ -40,6 +41,7 @@ app.include_router(simulation.router)
 app.include_router(news.router)
 app.include_router(agent.router)
 app.include_router(backtest.router)
+app.include_router(macro.router)
 
 @app.get("/")
 async def root():
