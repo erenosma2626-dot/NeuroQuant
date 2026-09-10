@@ -9,6 +9,7 @@ import { SimulationLab } from './components/SimulationLab';
 import { FundamentalRadar } from './components/FundamentalRadar';
 import { AgentTerminal } from './components/AgentTerminal';
 import { NewsFeed } from './components/NewsFeed';
+import { PortfolioSimulationPage } from './components/PortfolioSimulationPage';
 import type { 
   MarketData, 
   ForecastData, 
@@ -59,7 +60,7 @@ const DEFAULT_PORTFOLIO: UserPortfolio = {
 
 export const App: React.FC = () => {
   const [currentTicker, setCurrentTicker] = useState<string>('NVDA');
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'terminal' | 'simulation' | 'portfolio'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'terminal' | 'simulation' | 'portfolio' | 'portfolio-sim'>('dashboard');
 
   // Screener Universe & Portfolio
   const [screenerData, setScreenerData] = useState<ScreenerItem[]>([]);
@@ -310,6 +311,15 @@ export const App: React.FC = () => {
             onUpdatePortfolio={handleUpdatePortfolio}
             onSelectTicker={(t) => setCurrentTicker(t)}
             onNavigateTab={(tab) => setActiveTab(tab)}
+          />
+        )}
+
+        {/* SAYFA 5: 🔬 1-YILLIK DİNAMİK PORTFÖY SİMÜLASYONU */}
+        {activeTab === 'portfolio-sim' && (
+          <PortfolioSimulationPage
+            onBack={() => setActiveTab('portfolio')}
+            userPortfolio={userPortfolio}
+            screenerData={screenerData}
           />
         )}
       </main>

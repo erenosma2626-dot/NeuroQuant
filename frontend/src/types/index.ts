@@ -284,3 +284,93 @@ export interface MacroBarometerData {
     total_news_count: number;
   };
 }
+
+export interface PortfolioSimBasketItem {
+  ticker: string;
+  weight_pct: number;
+}
+
+export interface PortfolioSimRequest {
+  basket: PortfolioSimBasketItem[];
+  cash_weight_pct: number;
+  max_cash_pct: number;
+  initial_capital: number;
+  rebalance_interval_days: number;
+}
+
+export interface PortfolioSimAssetStepInfo {
+  price: number;
+  shares: number;
+  value: number;
+  return_pct: number;
+  opportunity_score: number;
+  is_cheap: boolean;
+  is_expensive: boolean;
+  cheap_price: number;
+  expensive_price: number;
+  weight_pct: number;
+}
+
+export interface PortfolioSimTrade {
+  day_index: number;
+  date: string;
+  ticker: string;
+  action: string;
+  badge: string;
+  price: number;
+  shares: number;
+  delta_notional: number;
+  friction_cost: number;
+  prev_weight_pct: number;
+  new_weight_pct: number;
+  reason: string;
+}
+
+export interface PortfolioSimStep {
+  step: number;
+  date: string;
+  portfolio_equity: number;
+  benchmark_equity: number;
+  cash_value: number;
+  cash_pct: number;
+  assets: Record<string, PortfolioSimAssetStepInfo>;
+  trades_today: PortfolioSimTrade[];
+}
+
+export interface PortfolioSimAssetSummary {
+  ticker: string;
+  initial_weight_pct: number;
+  final_weight_pct: number;
+  p0: number;
+  p_final: number;
+  buy_hold_return_pct: number;
+  cheap_price: number;
+  expensive_price: number;
+  valuation_status: string;
+}
+
+export interface PortfolioSimPerformance {
+  ai_final_equity: number;
+  buy_hold_final_equity: number;
+  ai_total_return_pct: number;
+  buy_hold_total_return_pct: number;
+  alpha_spread_pct: number;
+  ai_sharpe: number;
+  ai_sortino: number;
+  ai_max_drawdown_pct: number;
+  total_trades: number;
+}
+
+export interface PortfolioSimResponse {
+  initial_capital: number;
+  test_period_days: number;
+  start_date: string;
+  end_date: string;
+  cash_initial_pct: number;
+  max_cash_pct: number;
+  assets_summary: PortfolioSimAssetSummary[];
+  performance: PortfolioSimPerformance;
+  trades: PortfolioSimTrade[];
+  timeline: PortfolioSimStep[];
+}
+

@@ -5,8 +5,8 @@ import type { ScreenerItem, MarketData } from '../types';
 interface NavigationProps {
   currentTicker: string;
   onSelectTicker: (ticker: string) => void;
-  activeTab: 'dashboard' | 'terminal' | 'simulation' | 'portfolio';
-  onSelectTab: (tab: 'dashboard' | 'terminal' | 'simulation' | 'portfolio') => void;
+  activeTab: 'dashboard' | 'terminal' | 'simulation' | 'portfolio' | 'portfolio-sim';
+  onSelectTab: (tab: 'dashboard' | 'terminal' | 'simulation' | 'portfolio' | 'portfolio-sim') => void;
   universe: ScreenerItem[];
   activeMarketData?: MarketData | null;
 }
@@ -339,7 +339,7 @@ export const Navigation: React.FC<NavigationProps> = ({
       {/* ── Section Navigation Tabs ── */}
       <nav className="masthead-nav">
         {TABS.map((tab) => {
-          const isActive = activeTab === tab.id;
+          const isActive = activeTab === tab.id || (tab.id === 'portfolio' && activeTab === 'portfolio-sim');
           return (
             <button
               key={tab.id}

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { PlusCircle, MinusCircle, Wallet } from 'lucide-react';
+import { PlusCircle, MinusCircle, Wallet, Sparkles, ArrowRight } from 'lucide-react';
 import type { ScreenerItem, UserPortfolio } from '../types';
 
 interface PortfolioPageProps {
@@ -7,7 +7,7 @@ interface PortfolioPageProps {
   userPortfolio: UserPortfolio;
   onUpdatePortfolio: (updated: UserPortfolio) => void;
   onSelectTicker: (ticker: string) => void;
-  onNavigateTab: (tab: 'dashboard' | 'terminal' | 'simulation' | 'portfolio') => void;
+  onNavigateTab: (tab: 'dashboard' | 'terminal' | 'simulation' | 'portfolio' | 'portfolio-sim') => void;
 }
 
 // Editorial color palette for allocation bar
@@ -255,6 +255,68 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
               </div>
             </div>
           </div>
+        </div>
+
+        {/* ── 1-YILLIK DİNAMİK PORTFÖY SİMÜLASYONU BANNER / CTA ── */}
+        <div style={{
+          marginTop: '1.25rem',
+          background: 'linear-gradient(135deg, rgba(20, 83, 45, 0.05) 0%, rgba(30, 58, 138, 0.04) 100%)',
+          border: '1px solid var(--forest-rule)',
+          borderRadius: 'var(--radius-sm)',
+          padding: '1.1rem 1.4rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div style={{
+              width: 42,
+              height: 42,
+              borderRadius: 'var(--radius-xs)',
+              background: 'var(--forest-gain)',
+              color: '#fff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0
+            }}>
+              <Sparkles size={22} />
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '1.02rem', fontWeight: 700, color: 'var(--ink-primary)' }}>
+                  1 Yıllık Dinamik Portföy Simülasyonu ($100.000 Sermaye Masası)
+                </span>
+                <span style={{ fontSize: '0.65rem', fontWeight: 700, background: 'var(--forest-tint)', color: 'var(--forest-gain)', padding: '2px 6px', borderRadius: 2, textTransform: 'uppercase' }}>
+                  YENİ MOTOR
+                </span>
+              </div>
+              <p style={{ margin: '4px 0 0 0', fontSize: '0.84rem', color: 'var(--ink-secondary)', maxWidth: 740, lineHeight: 1.5 }}>
+                6 hisseye kadar özel sepet ve nakit ağırlıkları belirleyin; modelin 252 işlem günü boyunca ucuzluk/fırsat alımları ve kâr realizasyonu rotasyonunu interaktif grafikte simüle edin.
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={() => onNavigateTab('portfolio-sim')}
+            className="btn btn-primary"
+            style={{
+              background: 'var(--forest-gain)',
+              borderColor: 'var(--forest-mid)',
+              color: '#fff',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '9px 20px',
+              fontSize: '0.88rem',
+              fontWeight: 600,
+              cursor: 'pointer'
+            }}
+          >
+            Portföy Simülasyonunu Aç <ArrowRight size={16} />
+          </button>
         </div>
       </div>
 
