@@ -527,17 +527,18 @@ h1, h2, h3 {
   max-width: 1680px;
   width: 100%;
   margin: 0 auto;
-  padding: 2.5rem 2.5rem 5rem;
+  padding: 3rem 3rem 6rem;
   display: flex;
   flex-direction: column;
-  gap: 2.5rem;
+  gap: 3.5rem;
 }
 
 /* ── Editorial Panel / "Card" replacement ──────────────────────────────── */
 .panel {
   background: var(--paper-card);
   border: 1px solid var(--rule-hairline);
-  box-shadow: var(--shadow-subtle);
+  border-radius: var(--radius-xs);
+  box-shadow: 0 2px 10px rgba(26, 21, 18, 0.04);
 }
 
 .panel-section {
@@ -598,7 +599,7 @@ h1, h2, h3 {
 }
 
 .screener-table th {
-  padding: 10px 16px;
+  padding: 12px 20px;
   font-family: var(--font-body);
   font-size: 0.65rem;
   font-weight: 600;
@@ -614,7 +615,7 @@ h1, h2, h3 {
 .screener-table th:hover { color: var(--ink-primary); }
 
 .screener-table td {
-  padding: 13px 16px;
+  padding: 16px 20px;
   border-bottom: 1px solid var(--rule-hairline);
   font-size: 0.875rem;
   color: var(--ink-primary);
@@ -763,7 +764,7 @@ h1, h2, h3 {
 
 /* ── Metric Block (Portfolio, Stats) ────────────────────────────────────── */
 .metric-block {
-  padding: 1.25rem 1.5rem;
+  padding: 1.6rem 2rem;
   border-right: 1px solid var(--rule-hairline);
 }
 
@@ -955,7 +956,7 @@ h1, h2, h3 {
 }
 
 .lead-cell {
-  padding: 1.25rem 1.5rem;
+  padding: 1.6rem 2rem;
   border-right: 1px solid var(--rule-hairline);
   transition: background 0.12s;
 }

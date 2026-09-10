@@ -217,7 +217,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               <div style={{ marginTop: 10, display: 'flex', gap: 8, alignItems: 'center' }}>
                 <span className="signal signal-cobalt">200 SMA</span>
                 <span style={{ fontSize: '0.72rem', color: 'var(--ink-muted)' }}>
-                  Fiyat: {topSma.last_close.toLocaleString('tr-TR', { maximumFractionDigits: 2 })}
+                  Fiyat: ${topSma.last_close.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               </div>
             </div>

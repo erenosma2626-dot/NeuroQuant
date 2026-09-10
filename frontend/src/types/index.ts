@@ -156,13 +156,25 @@ export interface NewsItem {
   label: string;
 }
 
+export interface TopImpactfulNews {
+  title: string;
+  link: string;
+  source: string;
+  published: string;
+  elapsed_hours: number;
+  score: number;
+  impact_type: string;
+  badge_color: string;
+}
+
 export interface NewsData {
   ticker: string;
   total_news_count: number;
   overall_sentiment_score: number;
   overall_label: string;
-  riskiest_headline: string | null;
-  top_catalyst_headline: string | null;
+  top_3_impactful?: TopImpactfulNews[];
+  riskiest_headline?: string | null;
+  top_catalyst_headline?: string | null;
   news: NewsItem[];
 }
 
@@ -215,18 +227,30 @@ export interface MacroBarometerItem {
   value: number;
   unit: string;
   change_pct: number;
-  change_5d: number;
+  change_5d?: number;
+  trend_60d?: number;
+  sma50?: number;
+  sma200?: number;
+  dist_sma200?: number;
+  rating?: string;
   status: string;
   tag: string;
+  fed_badge?: string;
+  irx_rate?: number;
   is_risk_on: boolean;
 }
 
 export interface MacroRegimeBreakdown {
-  vix_contribution: number;
-  tnx_contribution: number;
-  oil_contribution: number;
-  safe_haven_contribution: number;
-  news_sentiment_contribution: number;
+  vix_contribution?: number;
+  tnx_contribution?: number;
+  tnx_trend_contribution?: number;
+  fed_stance_contribution?: number;
+  cnn_fg_contribution?: number;
+  oil_contribution?: number;
+  safe_haven_contribution?: number;
+  news_sentiment_contribution?: number;
+  news_contribution?: number;
+  [key: string]: number | undefined;
 }
 
 export interface MacroBarometerData {
@@ -235,9 +259,24 @@ export interface MacroBarometerData {
   regime_label: string;
   regime_badge: string;
   regime_color: string;
-  investor_note: string;
+  investor_note?: string;
+  fed_stance?: {
+    score: number;
+    label: string;
+    badge: string;
+    yield_spread: number;
+    short_rate_3m: number;
+  };
+  cnn_fear_greed?: {
+    score: number;
+    rating: string;
+    rating_raw: string;
+    previous_close: number;
+    change_1w: number;
+    is_live: boolean;
+  };
   barometers: MacroBarometerItem[];
-  breakdown: MacroRegimeBreakdown;
+  breakdown?: MacroRegimeBreakdown;
   global_news_sentiment: {
     score: number;
     label: string;

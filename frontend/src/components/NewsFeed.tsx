@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { NewsData } from '../types';
-import { Newspaper, ExternalLink, ShieldAlert, Sparkles, Clock, Globe, Building2 } from 'lucide-react';
+import { Newspaper, ExternalLink, Globe, Building2, Flame } from 'lucide-react';
 
 interface NewsFeedProps {
   tickerNews: NewsData | null;
@@ -18,264 +18,284 @@ export const NewsFeed: React.FC<NewsFeedProps> = ({
   const [activeMode, setActiveMode] = useState<'ticker' | 'global'>(defaultMode);
 
   const activeData = activeMode === 'ticker' ? tickerNews : globalNews;
+  const overallScore = activeData?.overall_sentiment_score || 0;
+  const isPos = overallScore > 0.10;
+  const isNeg = overallScore < -0.10;
 
-  const isPos = (activeData?.overall_sentiment_score || 0) > 0.1;
-  const isNeg = (activeData?.overall_sentiment_score || 0) < -0.1;
+  // En etkili 3 haber (varsa top_3_impactful, yoksa ilk 3)
+  const topItems = (activeData?.top_3_impactful && activeData.top_3_impactful.length > 0)
+    ? activeData.top_3_impactful
+    : (activeData?.news || []).slice(0, 3).map((n) => ({
+        title: n.title,
+        link: n.link,
+        source: n.source,
+        published: n.published,
+        elapsed_hours: n.elapsed_hours,
+        score: n.score,
+        impact_type: n.score >= 0.20 ? 'GÜÇLÜ KATALİZÖR' : n.score <= -0.20 ? 'KRİTİK RİSK' : 'MAKRO AKIŞ',
+        badge_color: n.score >= 0.20 ? 'var(--forest-gain)' : n.score <= -0.20 ? 'var(--madder-loss)' : 'var(--cobalt)',
+      }));
 
   return (
     <div className="panel" style={{ borderTop: '2px solid var(--ink-secondary)', animation: 'fadeUp 0.35s ease' }}>
       {/* ── HEADER ── */}
       <div style={{
-        padding: '1rem 2rem',
-        borderBottom: '2px solid var(--ink-primary)',
+        padding: '1.5rem 2.25rem',
+        borderBottom: '1px solid var(--rule-strong)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         flexWrap: 'wrap',
-        gap: 12,
+        gap: '1.5rem',
       }}>
+        {/* Sol Başlık */}
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: '1rem',
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+            <span className="section-label">Finansal Duygu &amp; Haber Akışı</span>
+            <span style={{
+              fontSize: '0.62rem',
               fontWeight: 700,
-              fontStyle: 'italic',
-              color: 'var(--ink-primary)',
+              padding: '2px 8px',
+              borderRadius: 3,
+              background: 'var(--paper-elevated)',
+              color: 'var(--ink-secondary)',
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
             }}>
-              Finansal Haber Akışı &amp; Üstel Duygu Motoru
-            </div>
-            {activeData && (
-              <span style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: '0.68rem',
-                fontWeight: 700,
-                padding: '2px 8px',
-                borderRadius: 'var(--radius-xs)',
-                background: isPos ? 'rgba(20, 83, 45, 0.1)' : isNeg ? 'rgba(136, 19, 55, 0.1)' : 'rgba(87, 83, 78, 0.1)',
-                color: isPos ? 'var(--forest-gain)' : isNeg ? 'var(--madder-loss)' : 'var(--ink-secondary)',
-                border: `1px solid ${isPos ? 'rgba(20, 83, 45, 0.25)' : isNeg ? 'rgba(136, 19, 55, 0.25)' : 'var(--rule-strong)'}`,
-              }}>
-                {activeData.overall_label} ({activeData.overall_sentiment_score > 0 ? '+' : ''}{activeData.overall_sentiment_score})
-              </span>
-            )}
+              Loughran-McDonald &middot; Sürekli Model
+            </span>
           </div>
-          <div style={{ fontSize: '0.72rem', color: 'var(--ink-secondary)', marginTop: 2 }}>
-            Google News RSS · 24-Saatlik yarılanma ömürlü üstel zaman çürümesi (time-decay)
+
+          <div style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: '1.35rem',
+            fontWeight: 700,
+            color: 'var(--ink-primary)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+          }}>
+            <Flame size={18} style={{ color: isPos ? 'var(--forest-gain)' : isNeg ? 'var(--madder-loss)' : 'var(--ink-secondary)' }} />
+            En Etkili 3 Piyasa Haberi &amp; Katalizör
           </div>
         </div>
 
-        {/* ── DUAL-MODE SEGMENTED SWITCH ── */}
-        <div style={{
-          display: 'flex',
-          background: 'var(--paper-elevated)',
-          border: '1px solid var(--rule-strong)',
-          borderRadius: 4,
-          padding: 2,
-        }}>
-          <button
-            onClick={() => setActiveMode('ticker')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              padding: '5px 12px',
-              border: 'none',
-              borderRadius: 3,
-              background: activeMode === 'ticker' ? 'var(--ink-primary)' : 'transparent',
-              color: activeMode === 'ticker' ? 'var(--paper-card)' : 'var(--ink-secondary)',
-              fontFamily: 'var(--font-mono)',
-              fontSize: '0.72rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
-            }}
-          >
-            <Building2 size={13} />
-            {currentTicker} Başlıkları
-          </button>
+        {/* Sağ: Mod Değiştirici & Genel Skor Rozeti */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+          {/* Dual-Mode Toggle */}
+          <div style={{
+            display: 'inline-flex',
+            background: 'var(--paper-elevated)',
+            border: '1px solid var(--rule-strong)',
+            borderRadius: 'var(--radius-sm)',
+            padding: 2,
+          }}>
+            <button
+              onClick={() => setActiveMode('ticker')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '6px 14px',
+                border: 'none',
+                borderRadius: 'var(--radius-xs)',
+                background: activeMode === 'ticker' ? 'var(--paper-card)' : 'transparent',
+                color: activeMode === 'ticker' ? 'var(--ink-primary)' : 'var(--ink-muted)',
+                fontWeight: activeMode === 'ticker' ? 700 : 500,
+                fontSize: '0.78rem',
+                cursor: 'pointer',
+                boxShadow: activeMode === 'ticker' ? '0 1px 3px rgba(0,0,0,0.06)' : 'none',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <Building2 size={13} />
+              {currentTicker} Başlıkları
+            </button>
 
-          <button
-            onClick={() => setActiveMode('global')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              padding: '5px 12px',
-              border: 'none',
-              borderRadius: 3,
-              background: activeMode === 'global' ? 'var(--ink-primary)' : 'transparent',
-              color: activeMode === 'global' ? 'var(--paper-card)' : 'var(--ink-secondary)',
+            <button
+              onClick={() => setActiveMode('global')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '6px 14px',
+                border: 'none',
+                borderRadius: 'var(--radius-xs)',
+                background: activeMode === 'global' ? 'var(--paper-card)' : 'transparent',
+                color: activeMode === 'global' ? 'var(--ink-primary)' : 'var(--ink-muted)',
+                fontWeight: activeMode === 'global' ? 700 : 500,
+                fontSize: '0.78rem',
+                cursor: 'pointer',
+                boxShadow: activeMode === 'global' ? '0 1px 3px rgba(0,0,0,0.06)' : 'none',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <Globe size={13} />
+              Küresel Wall Street
+            </button>
+          </div>
+
+          {/* Genel Duygu Skoru Rozeti */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '6px 14px',
+            background: isPos ? 'var(--forest-tint)' : isNeg ? 'var(--madder-tint)' : 'var(--paper-elevated)',
+            border: `1px solid ${isPos ? 'var(--forest-rule)' : isNeg ? 'var(--madder-rule)' : 'var(--rule-strong)'}`,
+            borderRadius: 'var(--radius-xs)',
+          }}>
+            <span style={{ fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--ink-muted)' }}>
+              Net Duygu:
+            </span>
+            <span className="tabular" style={{
               fontFamily: 'var(--font-mono)',
+              fontSize: '0.92rem',
+              fontWeight: 700,
+              color: isPos ? 'var(--forest-gain)' : isNeg ? 'var(--madder-loss)' : 'var(--ink-primary)',
+            }}>
+              {overallScore > 0 ? `+${overallScore.toFixed(2)}` : overallScore.toFixed(2)}
+            </span>
+            <span style={{
               fontSize: '0.72rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
-            }}
-          >
-            <Globe size={13} />
-            Küresel Wall Street
-          </button>
+              fontWeight: 700,
+              color: isPos ? 'var(--forest-gain)' : isNeg ? 'var(--madder-loss)' : 'var(--ink-secondary)',
+            }}>
+              ({activeData?.overall_label || 'NÖTR'})
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* ── ALERTS (RISK & CATALYST) ── */}
-      {activeData && (activeData.riskiest_headline || activeData.top_catalyst_headline) && (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: activeData.riskiest_headline && activeData.top_catalyst_headline ? '1fr 1fr' : '1fr',
-          borderBottom: '1px solid var(--rule-hairline)',
-        }}>
-          {activeData.riskiest_headline && (
-            <div style={{
-              padding: '0.85rem 1.5rem',
-              background: 'var(--madder-tint)',
-              borderRight: activeData.top_catalyst_headline ? '1px solid var(--madder-rule)' : 'none',
-              display: 'flex',
-              alignItems: 'flex-start',
-              gap: 10,
-            }}>
-              <ShieldAlert size={16} color="var(--madder-loss)" style={{ flexShrink: 0, marginTop: 2 }} />
-              <div>
-                <div style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--madder-loss)', marginBottom: 2 }}>
-                  En Riskli Başlık Alarmı
-                </div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--madder-loss)', lineHeight: 1.4, fontWeight: 500 }}>
-                  "{activeData.riskiest_headline}"
-                </div>
-              </div>
+      {/* ── EN ETKİLİ 3 HABER LİSTESİ (SABİT & FERAH KARTLAR) ── */}
+      <div style={{ padding: '1.75rem 2.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        {topItems.length === 0 ? (
+          <div style={{ padding: '2.5rem', textAlign: 'center', color: 'var(--ink-muted)' }}>
+            <Newspaper size={28} style={{ margin: '0 auto 8px', opacity: 0.4 }} />
+            <div style={{ fontStyle: 'italic', fontFamily: 'var(--font-display)', fontSize: '1rem' }}>
+              Bu kategori için henüz haber başlığı taranmadı veya veri bekleniyor…
             </div>
-          )}
-
-          {activeData.top_catalyst_headline && (
-            <div style={{
-              padding: '0.85rem 1.5rem',
-              background: 'var(--forest-tint)',
-              display: 'flex',
-              alignItems: 'flex-start',
-              gap: 10,
-            }}>
-              <Sparkles size={16} color="var(--forest-gain)" style={{ flexShrink: 0, marginTop: 2 }} />
-              <div>
-                <div style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--forest-gain)', marginBottom: 2 }}>
-                  Öne Çıkan Katalizör
-                </div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--forest-gain)', lineHeight: 1.4, fontWeight: 500 }}>
-                  "{activeData.top_catalyst_headline}"
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ── NEWS ITEMS LIST ── */}
-      {!activeData || activeData.news.length === 0 ? (
-        <div style={{ padding: '3rem 2rem', textAlign: 'center', color: 'var(--ink-muted)' }}>
-          <Newspaper size={28} style={{ margin: '0 auto 8px', opacity: 0.5 }} />
-          <div style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: '0.95rem' }}>
-            Haber akışı derleniyor veya önbellek yenileniyor…
           </div>
-        </div>
-      ) : (
-        <div style={{ maxHeight: 420, overflowY: 'auto' }}>
-          {activeData.news.map((item, idx) => {
+        ) : (
+          topItems.map((item, idx) => {
             const isItemPos = item.score > 0.15;
             const isItemNeg = item.score < -0.15;
+            const accentColor = isItemPos ? 'var(--forest-gain)' : isItemNeg ? 'var(--madder-loss)' : 'var(--cobalt)';
+
             return (
               <div
                 key={idx}
                 style={{
-                  padding: '1rem 1.75rem',
-                  borderBottom: idx < activeData.news.length - 1 ? '1px solid var(--rule-hairline)' : 'none',
-                  background: idx % 2 === 0 ? 'var(--paper-card)' : 'var(--paper-elevated)',
+                  background: 'var(--paper-card)',
+                  border: '1px solid var(--rule-hairline)',
+                  borderLeft: `4px solid ${accentColor}`,
+                  borderRadius: 'var(--radius-xs)',
+                  padding: '1.2rem 1.6rem',
                   display: 'flex',
-                  flexDirection: 'column',
-                  gap: 6,
-                  transition: 'background 0.15s ease',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '1.5rem',
+                  transition: 'background 0.15s ease, transform 0.15s ease',
                 }}
               >
-                {/* Meta line */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.72rem', color: 'var(--ink-muted)' }}>
-                    <span style={{ color: 'var(--cobalt)', fontWeight: 700 }}>
-                      {item.source}
+                {/* Sol: Rozet & Başlık */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                    <span style={{
+                      fontSize: '0.65rem',
+                      fontWeight: 700,
+                      padding: '2px 8px',
+                      borderRadius: 3,
+                      background: isItemPos ? 'var(--forest-tint)' : isItemNeg ? 'var(--madder-tint)' : 'var(--cobalt-tint)',
+                      color: accentColor,
+                      letterSpacing: '0.06em',
+                      textTransform: 'uppercase',
+                    }}>
+                      {item.impact_type}
                     </span>
-                    <span>·</span>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-                      <Clock size={11} />
-                      {item.elapsed_hours}s önce
+
+                    <span className="tabular" style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '0.72rem',
+                      fontWeight: 700,
+                      color: accentColor,
+                    }}>
+                      {item.score > 0 ? `+${item.score.toFixed(2)}` : item.score.toFixed(2)}
                     </span>
-                    <span>·</span>
-                    <span className="tabular" style={{ fontFamily: 'var(--font-mono)' }}>
-                      Ağırlık: {item.decay_weight}
+
+                    <span style={{ color: 'var(--rule-strong)' }}>&middot;</span>
+
+                    <span style={{ fontSize: '0.72rem', color: 'var(--ink-muted)' }}>
+                      {item.source} &middot; {item.elapsed_hours < 24 ? `${Math.round(item.elapsed_hours)} saat önce` : item.published}
                     </span>
                   </div>
 
-                  <span
-                    className="tabular"
+                  <a
+                    href={item.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     style={{
-                      fontFamily: 'var(--font-mono)',
-                      fontSize: '0.7rem',
-                      fontWeight: 700,
-                      padding: '1px 6px',
-                      borderRadius: 2,
-                      background: isItemPos ? 'rgba(20, 83, 45, 0.08)' : isItemNeg ? 'rgba(136, 19, 55, 0.08)' : 'rgba(87, 83, 78, 0.08)',
-                      color: isItemPos ? 'var(--forest-gain)' : isItemNeg ? 'var(--madder-loss)' : 'var(--ink-secondary)',
+                      fontFamily: 'var(--font-display)',
+                      fontSize: '1.05rem',
+                      fontWeight: 600,
+                      color: 'var(--ink-primary)',
+                      textDecoration: 'none',
+                      lineHeight: 1.4,
+                      display: 'block',
                     }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--cobalt)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ink-primary)')}
                   >
-                    {item.label} ({item.score > 0 ? '+' : ''}{item.score})
-                  </span>
+                    {item.title}
+                  </a>
                 </div>
 
-                {/* Title & Link */}
+                {/* Sağ: Dış Bağlantı Butonu */}
                 <a
                   href={item.link}
                   target="_blank"
                   rel="noopener noreferrer"
+                  className="btn btn-secondary"
                   style={{
-                    color: 'var(--ink-primary)',
+                    padding: '6px 12px',
+                    fontSize: '0.74rem',
+                    flexShrink: 0,
                     textDecoration: 'none',
-                    fontFamily: 'var(--font-body)',
-                    fontSize: '0.86rem',
-                    fontWeight: 600,
-                    lineHeight: 1.45,
                     display: 'flex',
-                    alignItems: 'baseline',
-                    justifyContent: 'space-between',
-                    gap: 12,
+                    alignItems: 'center',
+                    gap: 5,
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--cobalt)')}
-                  onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ink-primary)')}
+                  title="Haberi Kaynağında Oku"
                 >
-                  <span>{item.title}</span>
-                  <ExternalLink size={12} style={{ color: 'var(--ink-muted)', flexShrink: 0, marginTop: 3 }} />
+                  Habere Git <ExternalLink size={12} />
                 </a>
               </div>
             );
-          })}
-        </div>
-      )}
+          })
+        )}
+      </div>
 
-      {/* ── FOOTER NOTE ── */}
+      {/* ── ALT BİLGİLENDİRME (AÇIK & ŞEFFAF) ── */}
       <div style={{
-        padding: '0.65rem 2rem',
-        borderTop: '1px solid var(--rule-strong)',
-        fontSize: '0.68rem',
+        padding: '0.75rem 2.25rem',
+        borderTop: '1px solid var(--rule-hairline)',
+        fontSize: '0.72rem',
         color: 'var(--ink-muted)',
-        fontStyle: 'italic',
-        background: 'var(--paper-card)',
+        fontFamily: 'var(--font-mono)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
+        background: 'var(--paper-elevated)',
       }}>
         <span>
-          Matematiksel Ağırlıklandırma: w = e^(-0.0288 × saat). 24 saat sonra bir haberin duygu etkisi %50'ye iner.
+          Net duygu skoru son 14 günün tüm ({activeData?.total_news_count || 0}) haberinin 24s yarılanma ömürlü üstel zaman çürümesiyle hesaplanmıştır.
         </span>
-        <span className="tabular" style={{ fontFamily: 'var(--font-mono)' }}>
-          {activeData?.total_news_count || 0} Başlık İncelendi
+        <span style={{ color: 'var(--cobalt)', fontWeight: 600 }}>
+          Wall Street Duygu Konsensüsü
         </span>
       </div>
     </div>
   );
 };
+
+export default NewsFeed;

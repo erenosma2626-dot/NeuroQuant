@@ -20,4 +20,5 @@ Icon?
 # Pickles / Local Artifacts
 *.pkl
 
-#
+# Agents
+.agents/
