@@ -6,14 +6,32 @@ interface SimulationLabProps {
 }
 
 export const SimulationLab: React.FC<SimulationLabProps> = ({ simulation }) => {
-  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const timeline    = simulation.timeline || [];
+  const totalSteps  = timeline.length;
+
+  // Başlangıçta simülasyonun tamamlanmış nihai eğrisini doğrudan göster
+  const [currentStepIndex, setCurrentStepIndex] = useState(() => Math.max(0, totalSteps - 1));
   const [isPlaying, setIsPlaying]               = useState(false);
   const [playbackSpeed, setPlaybackSpeed]       = useState<number>(2);
   const [selectedTrade, setSelectedTrade]       = useState<TradeEvent | null>(null);
 
-  const timeline    = simulation.timeline;
-  const totalSteps  = timeline.length;
-  const currentStep: SimulationStep = timeline[currentStepIndex] || timeline[0];
+  // Hisse (ticker) veya zaman çizgisi değiştiğinde state'i yeni hisseye senkronize et
+  useEffect(() => {
+    setIsPlaying(false);
+    setSelectedTrade(null);
+    setCurrentStepIndex(Math.max(0, simulation.timeline.length - 1));
+  }, [simulation.ticker, simulation.timeline.length]);
+
+  const currentStep: SimulationStep = timeline[currentStepIndex] || timeline[0] || {
+    date: simulation.start_date || '',
+    price: 0,
+    ai_equity: simulation.initial_capital || 10000,
+    buy_hold_equity: simulation.initial_capital || 10000,
+    ai_cash_value: simulation.initial_capital || 10000,
+    ai_stock_value: 0,
+    weight_pct: 0,
+    confidence_score: 50,
+  };
 
   // Playback timer
   useEffect(() => {
@@ -32,6 +50,13 @@ export const SimulationLab: React.FC<SimulationLabProps> = ({ simulation }) => {
 
   const handleRestart = () => { setIsPlaying(false); setCurrentStepIndex(0); };
 
+  const handleTogglePlay = () => {
+    if (!isPlaying && currentStepIndex >= totalSteps - 1) {
+      setCurrentStepIndex(0);
+    }
+    setIsPlaying(!isPlaying);
+  };
+
   const aiReturn  = ((currentStep.ai_equity    - simulation.initial_capital) / simulation.initial_capital) * 100;
   const bhReturn  = ((currentStep.buy_hold_equity - simulation.initial_capital) / simulation.initial_capital) * 100;
 
@@ -42,11 +67,12 @@ export const SimulationLab: React.FC<SimulationLabProps> = ({ simulation }) => {
 
   const activeTimeline = timeline.slice(0, currentStepIndex + 1);
   const allEquities    = timeline.flatMap(t => [t.ai_equity, t.buy_hold_equity]);
-  const minEq = Math.min(...allEquities, 9200) * 0.975;
-  const maxEq = Math.max(...allEquities, 10800) * 1.025;
+  const minEq = allEquities.length > 0 ? Math.min(...allEquities, 9200) * 0.975 : 9000;
+  const maxEq = allEquities.length > 0 ? Math.max(...allEquities, 10800) * 1.025 : 11000;
+  const span  = maxEq - minEq || 1;
 
-  const getX = (i: number) => pad.left + (i / (totalSteps - 1)) * (svgW - pad.left - pad.right);
-  const getY = (v: number) => svgH - pad.bottom - ((v - minEq) / (maxEq - minEq)) * (svgH - pad.top - pad.bottom);
+  const getX = (i: number) => totalSteps <= 1 ? pad.left : pad.left + (i / (totalSteps - 1)) * (svgW - pad.left - pad.right);
+  const getY = (v: number) => svgH - pad.bottom - ((v - minEq) / span) * (svgH - pad.top - pad.bottom);
 
   const aiPath = activeTimeline.reduce((acc, c, i) => {
     const x = getX(i); const y = getY(c.ai_equity);
@@ -93,7 +119,7 @@ export const SimulationLab: React.FC<SimulationLabProps> = ({ simulation }) => {
         {/* Controls bar */}
         <div className="sim-controls">
           {/* Play / Pause */}
-          <button className="sim-play-btn" onClick={() => setIsPlaying(!isPlaying)}>
+          <button className="sim-play-btn" onClick={handleTogglePlay}>
             {isPlaying ? '⏸ Duraklat' : '▶ Oynat'}
           </button>
 

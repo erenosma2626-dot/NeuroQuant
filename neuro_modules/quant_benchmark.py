@@ -75,21 +75,20 @@ def compute_quant_features(df: pd.DataFrame) -> pd.DataFrame:
     data['bench_ret_1d'] = data['Bench_Close'].pct_change()
     
     # 2. SEKTÖREL GÖRECELİ ALFA (Relative Strength)
-    # Hissenin sektöründen pozitif/negatif ayrışması
     data['alpha_1d'] = data['ret_1d'] - data['bench_ret_1d']
-    data['alpha_5d_cum'] = data['alpha_1d'].rolling(window=5).sum()
-    data['alpha_20d_cum'] = data['alpha_1d'].rolling(window=20).sum()
+    data['alpha_5d_cum'] = data['alpha_1d'].rolling(window=5, min_periods=1).sum()
+    data['alpha_20d_cum'] = data['alpha_1d'].rolling(window=20, min_periods=1).sum()
     
     # Göreceli Beta (20 günlük kovaryans / varyans)
-    cov = data['ret_1d'].rolling(window=20).cov(data['bench_ret_1d'])
-    var = data['bench_ret_1d'].rolling(window=20).var()
+    cov = data['ret_1d'].rolling(window=20, min_periods=5).cov(data['bench_ret_1d'])
+    var = data['bench_ret_1d'].rolling(window=20, min_periods=5).var()
     data['beta_20d'] = cov / (var + 1e-8)
     data['beta_20d'] = data['beta_20d'].clip(-3.0, 3.0)
     
     # 3. UZUN VADELİ TREND REJİMLERİ (SMA 50, SMA 200, Golden/Death Cross)
-    # (Kullanıcı tercihi doğrultusunda yanıltıcı kısa vadeli RSI kaldırıldı)
-    data['sma_50'] = data['Close'].rolling(window=50).mean()
-    data['sma_200'] = data['Close'].rolling(window=200).mean()
+    n_rows = len(data)
+    data['sma_50'] = data['Close'].rolling(window=min(50, n_rows), min_periods=min(5, n_rows)).mean()
+    data['sma_200'] = data['Close'].rolling(window=min(200, n_rows), min_periods=min(15, n_rows)).mean()
     # Fiyatın SMA 50 ve SMA 200'e olan normalize yüzdesel mesafesi
     data['dist_sma50'] = (data['Close'] - data['sma_50']) / (data['sma_50'] + 1e-8)
     data['dist_sma200'] = (data['Close'] - data['sma_200']) / (data['sma_200'] + 1e-8)
@@ -104,8 +103,8 @@ def compute_quant_features(df: pd.DataFrame) -> pd.DataFrame:
     data['MACD_diff'] = macd - signal
     
     # Normalize Bollinger Mesafesi: (Close - Lower) / (Upper - Lower)
-    sma20 = data['Close'].rolling(window=20).mean()
-    std20 = data['Close'].rolling(window=20).std()
+    sma20 = data['Close'].rolling(window=20, min_periods=min(5, n_rows)).mean()
+    std20 = data['Close'].rolling(window=20, min_periods=min(5, n_rows)).std()
     bb_upper = sma20 + 2 * std20
     bb_lower = sma20 - 2 * std20
     data['BB_pos'] = (data['Close'] - bb_lower) / (bb_upper - bb_lower + 1e-8)
@@ -115,9 +114,11 @@ def compute_quant_features(df: pd.DataFrame) -> pd.DataFrame:
     data['parkinson_vol'] = np.sqrt(1 / (4 * np.log(2)) * (np.log(data['High'] / data['Low']) ** 2))
     
     # 4. Hedef Değişken (5 Günlük Kümülatif Getiri)
-    data['target_5d'] = data['Close'].shift(-HORIZON) / data['Close'] - 1.0
+    data['target_5d'] = (data['Close'].shift(-HORIZON) / data['Close'] - 1.0).bfill().fillna(0.0)
     
-    return data.dropna()
+    # Backfill & forward fill to ensure non-empty dataset for short-history assets
+    clean_data = data.bfill().ffill().fillna(0.0)
+    return clean_data
 
 def institutional_metrics(actual_returns: np.ndarray, predicted_direction: np.ndarray, risk_free_rate=0.04) -> dict:
     """
