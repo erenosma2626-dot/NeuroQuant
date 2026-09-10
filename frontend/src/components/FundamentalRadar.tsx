@@ -11,7 +11,7 @@ export const FundamentalRadar: React.FC<FundamentalRadarProps> = ({ data }) => {
       <div className="panel" style={{ borderTop: '2px solid var(--ink-secondary)' }}>
         <div style={{ padding: '1rem 2rem', borderBottom: '2px solid var(--ink-primary)' }}>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', fontWeight: 700, fontStyle: 'italic', color: 'var(--ink-primary)' }}>
-            Temel Değerleme &amp; Bilanço Radarı
+            Temel Değerleme
           </div>
           <div style={{ fontSize: '0.72rem', color: 'var(--ink-secondary)', marginTop: 2 }}>Varlık sınıfına göre değerleme yaklaşımı</div>
         </div>
@@ -58,10 +58,10 @@ export const FundamentalRadar: React.FC<FundamentalRadarProps> = ({ data }) => {
       }}>
         <div>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', fontWeight: 700, fontStyle: 'italic', color: 'var(--ink-primary)' }}>
-            Temel Değerleme &amp; Bilanço Radarı
+            Temel Değerleme
           </div>
-          <div style={{ fontSize: '0.72rem', color: 'var(--ink-secondary)', marginTop: 2 }}>
-            Tarihsel çarpanlar ve akran grubuna göre ucuzluk/pahalılık skoru
+          <div style={{ fontSize: '0.72rem', color: 'var(--ink-muted)', marginTop: 2 }}>
+            Piyasa çarpanları ve bilanço görünümü
           </div>
         </div>
         <span className={`signal ${isCheap ? 'signal-buy' : isExpensive ? 'signal-sell' : 'signal-cobalt'}`}>
@@ -90,7 +90,7 @@ export const FundamentalRadar: React.FC<FundamentalRadarProps> = ({ data }) => {
       }}>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: '0.62rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--amber-warm)', marginBottom: 6 }}>
-            Bilanço Koruma Kalkanı
+            Bilanço &amp; Finansal Takvim
           </div>
           <p style={{ fontSize: '0.85rem', color: 'var(--ink-secondary)', lineHeight: 1.6 }}>
             {data.earnings_regime}

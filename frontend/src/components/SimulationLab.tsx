@@ -97,19 +97,21 @@ export const SimulationLab: React.FC<SimulationLabProps> = ({ simulation }) => {
 
       {/* ── PAGE HEADER ─────────────────────────────────────────────────── */}
       <div style={{
-        padding: '1.5rem 0 0',
+        padding: '1.25rem 0 0',
         borderTop: '3px solid var(--ink-primary)',
+        display: 'flex',
+        alignItems: 'baseline',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: 12,
       }}>
-        <div style={{ fontSize: '0.62rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-muted)', marginBottom: 6 }}>
-          Kantitatif Araştırma Laboratuvarı
-        </div>
-        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', fontWeight: 700, color: 'var(--ink-primary)', letterSpacing: '-0.02em', lineHeight: 1 }}>
-          10.000$ Dinamik Sermaye Simülasyonu
-        </h1>
-        <div style={{ fontSize: '0.85rem', color: 'var(--ink-secondary)', marginTop: 8, lineHeight: 1.6, maxWidth: 860 }}>
-          {simulation.ticker} hissesi üzerinde 6 aylık körleme senaryosu. Yapay zeka modeli sermaye ağırlığını
-          (0k / 2.5k / 5k / 7.5k / 10k) kantitatif güven skoruna göre dinamik belirlerken,
-          karşı taraf tüm sermayeyi piyasada tutan bir al-tut yatırımcısı rolündedir.
+        <div>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.85rem', fontWeight: 700, color: 'var(--ink-primary)', letterSpacing: '-0.02em', lineHeight: 1 }}>
+            Simülasyon
+          </h1>
+          <div style={{ fontSize: '0.82rem', color: 'var(--ink-muted)', marginTop: 6 }}>
+            {simulation.ticker} &middot; Model sinyalleri ile Al-Tut stratejisinin 6 aylık karşılaştırmalı getiri ve risk seyri
+          </div>
         </div>
       </div>
 
@@ -176,7 +178,7 @@ export const SimulationLab: React.FC<SimulationLabProps> = ({ simulation }) => {
             <div>
               <div style={{ fontSize: '0.58rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-muted)', marginBottom: 2 }}>NeuroQuant AI</div>
               <div className="tabular" style={{ fontWeight: 700, fontSize: '0.95rem', color: aiReturn >= 0 ? 'var(--forest-gain)' : 'var(--madder-loss)' }}>
-                {currentStep.ai_equity.toLocaleString('tr-TR', { minimumFractionDigits: 0 })}
+                ${currentStep.ai_equity.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                 <span style={{ fontSize: '0.72rem', marginLeft: 5, opacity: 0.85 }}>
                   ({aiReturn >= 0 ? '+' : ''}{aiReturn.toFixed(2)}%)
                 </span>
@@ -186,7 +188,7 @@ export const SimulationLab: React.FC<SimulationLabProps> = ({ simulation }) => {
             <div>
               <div style={{ fontSize: '0.58rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-muted)', marginBottom: 2 }}>Al-Tut (Referans)</div>
               <div className="tabular" style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--ink-secondary)' }}>
-                {currentStep.buy_hold_equity.toLocaleString('tr-TR', { minimumFractionDigits: 0 })}
+                ${currentStep.buy_hold_equity.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                 <span style={{ fontSize: '0.72rem', marginLeft: 5, opacity: 0.85 }}>
                   ({bhReturn >= 0 ? '+' : ''}{bhReturn.toFixed(2)}%)
                 </span>
@@ -207,7 +209,7 @@ export const SimulationLab: React.FC<SimulationLabProps> = ({ simulation }) => {
                 <text x={pad.left - 8} y={y + 4}
                   fill="#8C827A" fontSize="10" textAnchor="end"
                   fontFamily="'JetBrains Mono', monospace">
-                  {Math.round(val).toLocaleString('tr-TR')}
+                  ${Math.round(val).toLocaleString('en-US')}
                 </text>
               </g>
             ))}
@@ -218,7 +220,7 @@ export const SimulationLab: React.FC<SimulationLabProps> = ({ simulation }) => {
             <text x={pad.left - 8} y={y10k - 4}
               fill="#57534E" fontSize="9.5" textAnchor="end"
               fontFamily="'JetBrains Mono', monospace" fontWeight="600">
-              10.000 $
+              $10,000
             </text>
 
             {/* Buy & Hold line — stone dashed */}
@@ -228,7 +230,7 @@ export const SimulationLab: React.FC<SimulationLabProps> = ({ simulation }) => {
             {/* AI line — Forest Green */}
             <path d={aiPath} fill="none" stroke="#14532D" strokeWidth="3" />
 
-            {/* Trade markers */}
+            {/* Trade markers (Clean dots with tooltip on hover, click for rationale) */}
             {simulation.trades.map((tr) => {
               if (tr.day_index > currentStepIndex) return null;
               const xPos = getX(tr.day_index);
@@ -236,22 +238,10 @@ export const SimulationLab: React.FC<SimulationLabProps> = ({ simulation }) => {
               const isBuy = tr.action === 'ALIM';
               return (
                 <g key={tr.day_index} style={{ cursor: 'pointer' }} onClick={() => setSelectedTrade(tr)}>
-                  <circle cx={xPos} cy={yPos} r={5.5}
+                  <title>{`${tr.date} · ${tr.action} (${tr.badge}) @ $${tr.price.toFixed(2)} — Tıklayarak gerekçeyi açın`}</title>
+                  <circle cx={xPos} cy={yPos} r={4.5}
                     fill={isBuy ? '#14532D' : '#881337'}
                     stroke="#FAF8F3" strokeWidth="1.5" />
-                  {/* label */}
-                  <rect
-                    x={xPos - 18} y={isBuy ? yPos - 22 : yPos + 8}
-                    width={36} height={14} rx={2}
-                    fill={isBuy ? '#14532D' : '#881337'}
-                    opacity="0.85"
-                  />
-                  <text
-                    x={xPos} y={isBuy ? yPos - 12 : yPos + 19}
-                    fill="#FAF8F3" fontSize="8" fontWeight="bold"
-                    textAnchor="middle" fontFamily="'JetBrains Mono', monospace">
-                    {tr.badge}
-                  </text>
                 </g>
               );
             })}
@@ -291,10 +281,10 @@ export const SimulationLab: React.FC<SimulationLabProps> = ({ simulation }) => {
               Anlık Sermaye Dağılımı
             </span>
             <span className="tabular" style={{ fontSize: '0.85rem', color: 'var(--forest-gain)', fontWeight: 600 }}>
-              Hisse: {currentStep.ai_stock_value.toFixed(0)} ({currentStep.weight_pct}%)
+              Hisse: ${currentStep.ai_stock_value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ({currentStep.weight_pct}%)
             </span>
             <span className="tabular" style={{ fontSize: '0.85rem', color: 'var(--ink-secondary)' }}>
-              Nakit: {currentStep.ai_cash_value.toFixed(0)} ({100 - currentStep.weight_pct}%)
+              Nakit: ${currentStep.ai_cash_value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ({100 - currentStep.weight_pct}%)
             </span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -318,10 +308,10 @@ export const SimulationLab: React.FC<SimulationLabProps> = ({ simulation }) => {
         }}>
           <div>
             <div style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', fontWeight: 700, fontStyle: 'italic', color: 'var(--ink-primary)' }}>
-              Kurumsal Performans Tear-Sheet
+              Performans Özeti
             </div>
             <div style={{ fontSize: '0.72rem', color: 'var(--ink-secondary)', marginTop: 2 }}>
-              6 aylık simülasyon · Komisyon ve kayma maliyeti dahil
+              6 aylık simülasyon dönemi
             </div>
           </div>
           <span className="tabular" style={{
@@ -340,16 +330,16 @@ export const SimulationLab: React.FC<SimulationLabProps> = ({ simulation }) => {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)' }}>
           {[
             {
-              label: 'AI Net Getiri',
+              label: 'Model Net Getiri',
               value: `+%${simulation.performance.ai_total_return_pct}`,
-              sub: `Final: ${simulation.performance.ai_final_equity.toLocaleString('tr-TR')}`,
+              sub: `Bakiye: $${simulation.performance.ai_final_equity.toLocaleString('en-US')}`,
               color: 'var(--forest-gain)',
               left: 'var(--forest-gain)',
             },
             {
               label: 'Al-Tut Getiri',
               value: `+%${simulation.performance.buy_hold_total_return_pct}`,
-              sub: `Final: ${simulation.performance.buy_hold_final_equity.toLocaleString('tr-TR')}`,
+              sub: `Bakiye: $${simulation.performance.buy_hold_final_equity.toLocaleString('en-US')}`,
               color: 'var(--ink-secondary)',
               left: 'var(--ink-secondary)',
             },
@@ -383,10 +373,10 @@ export const SimulationLab: React.FC<SimulationLabProps> = ({ simulation }) => {
         {/* Trade log */}
         <div style={{ padding: '0.75rem 2rem', borderTop: '1px solid var(--rule-strong)', borderBottom: '1px solid var(--rule-hairline)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: '0.9rem', fontWeight: 700, fontStyle: 'italic', color: 'var(--ink-primary)' }}>
-            Taktiksel Alım / Satım Kütüğü
+            İşlem Geçmişi
           </div>
           <div style={{ fontSize: '0.72rem', color: 'var(--ink-muted)' }}>
-            {simulation.trades.length} işlem · Satıra tıklayın → Karar gerekçesi
+            {simulation.trades.length} işlem
           </div>
         </div>
 
@@ -415,7 +405,7 @@ export const SimulationLab: React.FC<SimulationLabProps> = ({ simulation }) => {
                     {tr.action} ({tr.badge})
                   </span>
                 </td>
-                <td className="tabular">{tr.price.toFixed(2)}</td>
+                <td className="tabular">${tr.price.toFixed(2)}</td>
                 <td className="tabular" style={{ color: 'var(--ink-secondary)' }}>
                   %{tr.prev_weight_pct} → %{tr.new_weight_pct}
                 </td>
@@ -423,7 +413,7 @@ export const SimulationLab: React.FC<SimulationLabProps> = ({ simulation }) => {
                   %{tr.confidence_score.toFixed(1)}
                 </td>
                 <td className="tabular" style={{ color: 'var(--forest-gain)', fontWeight: 600 }}>
-                  {tr.total_portfolio.toLocaleString('tr-TR')}
+                  ${tr.total_portfolio.toLocaleString('en-US')}
                 </td>
                 <td style={{ textAlign: 'right', paddingRight: '2rem' }}>
                   <button className="btn btn-secondary" style={{ padding: '3px 10px', fontSize: '0.72rem' }}>

@@ -6,128 +6,143 @@ interface AgentTerminalProps {
 }
 
 export const AgentTerminal: React.FC<AgentTerminalProps> = ({ comment }) => {
+  // Varsayılan listeli aksiyon maddeleri (eğer API henüz dönmediyse fallback)
+  const actions = comment.strategic_actions || [
+    { title: 'Taktiksel Yaklaşım', detail: comment.suggested_action },
+    { title: 'Piyasa Katalizörü', detail: comment.sentiment_and_catalysts },
+    { title: 'Risk Disiplini', detail: comment.risk_factors?.[0] || '200 günlük ortalama altında zarar kes disiplini' }
+  ];
+
   return (
-    <div className="panel" style={{ borderTop: '2px solid var(--cobalt)', borderLeft: '3px solid var(--cobalt)' }}>
-      {/* Header */}
+    <div className="panel" style={{ borderTop: '2px solid var(--ink-secondary)', animation: 'fadeUp 0.35s ease' }}>
+      {/* ── HEADER ── */}
       <div style={{
-        padding: '1rem 2rem',
-        borderBottom: '2px solid var(--ink-primary)',
+        padding: '1.25rem 2.25rem',
+        borderBottom: '1px solid var(--rule-strong)',
         display: 'flex',
-        alignItems: 'center',
+        alignItems: 'baseline',
         justifyContent: 'space-between',
       }}>
-        <div>
-          <div style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: '1rem',
-            fontWeight: 700,
-            fontStyle: 'italic',
-            color: 'var(--ink-primary)',
-          }}>
-            Kurumsal Yapay Zeka Stratejist Raporu
-          </div>
-          <div style={{ fontSize: '0.72rem', color: 'var(--ink-secondary)', marginTop: 2 }}>
-            Hibrit çıkarım · Teknik + Temel + Makro sentezi
-          </div>
-        </div>
-        <span style={{
-          fontFamily: 'var(--font-mono)',
-          fontSize: '0.65rem',
-          fontWeight: 600,
-          letterSpacing: '0.12em',
-          textTransform: 'uppercase',
-          color: 'var(--cobalt)',
-          border: '1px solid var(--cobalt-rule)',
-          padding: '3px 8px',
-          borderRadius: 'var(--radius-xs)',
-          background: 'var(--cobalt-tint)',
+        <div style={{
+          fontFamily: 'var(--font-display)',
+          fontSize: '1.25rem',
+          fontWeight: 700,
+          color: 'var(--ink-primary)',
         }}>
-          NQ-AI v3.0
-        </span>
+          Stratejist Değerlendirmesi
+        </div>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-        {/* Executive Summary */}
-        <div style={{
-          padding: '1.5rem 2rem',
-          borderBottom: '1px solid var(--rule-hairline)',
-          background: 'var(--cobalt-tint)',
+      {/* ── YÖNETİCİ ÖZETİ ── */}
+      <div style={{
+        padding: '1.5rem 2.25rem',
+        borderBottom: '1px solid var(--rule-hairline)',
+        background: 'var(--paper-card)',
+      }}>
+        <p style={{
+          fontFamily: 'var(--font-display)',
+          fontSize: '1.1rem',
+          color: 'var(--ink-primary)',
+          fontWeight: 500,
+          lineHeight: 1.6,
+          fontStyle: 'italic',
+          margin: 0,
         }}>
-          <div style={{ fontSize: '0.62rem', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--cobalt)', marginBottom: 8 }}>
-            Yönetici Özeti
-          </div>
-          <p style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: '1rem',
-            color: 'var(--ink-primary)',
-            fontWeight: 500,
-            lineHeight: 1.65,
-            fontStyle: 'italic',
-          }}>
-            "{comment.executive_summary}"
-          </p>
-        </div>
+          "{comment.executive_summary}"
+        </p>
+      </div>
 
-        {/* Technical Regime */}
+      {/* ── TEKNİK & TEMEL GÖRÜNÜM (İKİ SÜTUNLU FERAH IZGARA) ── */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        borderBottom: '1px solid var(--rule-hairline)',
+      }}>
         <div style={{
-          padding: '1.25rem 2rem',
-          borderBottom: '1px solid var(--rule-hairline)',
+          padding: '1.5rem 2.25rem',
+          borderRight: '1px solid var(--rule-hairline)',
         }}>
-          <div style={{ fontSize: '0.62rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-muted)', marginBottom: 6 }}>
-            Teknik &amp; Makro Rejim
+          <div className="section-label" style={{ marginBottom: 6 }}>
+            Teknik Rejim &amp; Trend
           </div>
-          <p style={{ fontSize: '0.88rem', color: 'var(--ink-secondary)', lineHeight: 1.6 }}>
+          <div style={{ fontSize: '0.88rem', color: 'var(--ink-secondary)', lineHeight: 1.6 }}>
             {comment.technical_regime}
-          </p>
-        </div>
-
-        {/* Fundamental Valuation */}
-        <div style={{
-          padding: '1.25rem 2rem',
-          borderBottom: '1px solid var(--rule-hairline)',
-        }}>
-          <div style={{ fontSize: '0.62rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-muted)', marginBottom: 6 }}>
-            Temel Değerleme &amp; Bilanço
           </div>
-          <p style={{ fontSize: '0.88rem', color: 'var(--ink-secondary)', lineHeight: 1.6 }}>
-            {comment.fundamental_valuation}
-          </p>
         </div>
 
-        {/* Suggested Action */}
         <div style={{
-          padding: '1.25rem 2rem',
-          background: 'var(--forest-tint)',
-          borderTop: '2px solid var(--forest-rule)',
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: '1.5rem',
+          padding: '1.5rem 2.25rem',
         }}>
-          <div style={{ flexShrink: 0 }}>
-            <div style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--forest-gain)', marginBottom: 4 }}>
-              Portföy Aksiyonu
-            </div>
+          <div className="section-label" style={{ marginBottom: 6 }}>
+            Değerleme &amp; Likidite
+          </div>
+          <div style={{ fontSize: '0.88rem', color: 'var(--ink-secondary)', lineHeight: 1.6 }}>
+            {comment.fundamental_valuation}
+          </div>
+        </div>
+      </div>
+
+      {/* ── STRATEJİK YOL HARİTASI (LİSTELİ & AÇIKLAYICI) ── */}
+      <div style={{
+        padding: '1.75rem 2.25rem',
+        background: 'var(--paper-elevated)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+          <div>
+            <div className="section-label" style={{ marginBottom: 3 }}>Stratejik Görünüm</div>
             <div style={{
               fontFamily: 'var(--font-display)',
-              fontSize: '1.25rem',
+              fontSize: '1.2rem',
               fontWeight: 700,
               color: 'var(--forest-gain)',
-              letterSpacing: '-0.01em',
             }}>
               {comment.suggested_action}
             </div>
           </div>
-          <div style={{
-            width: 1,
-            alignSelf: 'stretch',
-            background: 'var(--forest-rule)',
-            flexShrink: 0,
-          }} />
-          <p style={{ fontSize: '0.85rem', color: 'var(--ink-secondary)', lineHeight: 1.6, paddingTop: 2 }}>
-            Yapay zeka modelinin teknik, temel ve makro analizine dayalı portföy aksiyonu önerisi. Bu öneri bir finansal tavsiye niteliği taşımamaktadır.
-          </p>
+        </div>
+
+        {/* 3 Maddeli Açıklayıcı Liste */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: '1.25rem',
+        }}>
+          {actions.map((act, idx) => (
+            <div
+              key={idx}
+              style={{
+                background: 'var(--paper-card)',
+                border: '1px solid var(--rule-hairline)',
+                borderTop: '2.5px solid var(--forest-gain)',
+                borderRadius: 'var(--radius-xs)',
+                padding: '1.1rem 1.3rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 6,
+              }}
+            >
+              <div style={{
+                fontSize: '0.72rem',
+                fontWeight: 700,
+                letterSpacing: '0.06em',
+                textTransform: 'uppercase',
+                color: 'var(--ink-primary)',
+              }}>
+                {idx + 1}. {act.title}
+              </div>
+              <div style={{
+                fontSize: '0.84rem',
+                color: 'var(--ink-secondary)',
+                lineHeight: 1.55,
+              }}>
+                {act.detail}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
   );
 };
+
+export default AgentTerminal;

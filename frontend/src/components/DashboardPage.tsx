@@ -115,7 +115,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             onClick={() => onNavigateTab('portfolio')}
             style={{ fontSize: '0.78rem' }}
           >
-            Portföy Atölyesi →
+            Portföyü Görüntüle →
           </button>
         </div>
 
@@ -173,7 +173,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             Günün Ayrışan Hareketleri
           </div>
           <div style={{ fontSize: '0.65rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-muted)' }}>
-            Çok-Faktörlü Kantitatif Tarama
+            Öne Çıkan Hisseler
           </div>
         </div>
 
@@ -269,10 +269,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               fontStyle: 'italic',
               color: 'var(--ink-primary)',
             }}>
-              Kantitatif Varlık Evreni
+              Hisse &amp; Varlık Listesi
             </div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--ink-secondary)', marginTop: 2 }}>
-              Yapay zeka sinyalleri, 200 SMA, alfa ve güven skoruna göre sıralanabilir — sütun başlığına tıklayın
+            <div style={{ fontSize: '0.75rem', color: 'var(--ink-muted)', marginTop: 2 }}>
+              Teknik ve temel göstergelerle filtrelenmiş piyasa evreni
             </div>
           </div>
 
@@ -472,7 +472,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         }}>
           <span>{filteredAndSorted.length} varlık gösteriliyor</span>
           <span style={{ fontStyle: 'italic' }}>
-            Veriler yfinance üzerinden gerçek zamanlı alınmaktadır · Google TimesFM 3.0 Foundation Model &amp; Çok-Faktörlü Quant Motoru
+            Veriler piyasa saatlerinde anlık güncellenmektedir
           </span>
         </div>
       </div>

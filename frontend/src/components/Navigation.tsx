@@ -12,10 +12,10 @@ interface NavigationProps {
 }
 
 const TABS: { id: 'dashboard' | 'terminal' | 'simulation' | 'portfolio'; label: string }[] = [
-  { id: 'dashboard',  label: 'Piyasa Tarayıcısı'   },
-  { id: 'terminal',   label: 'Kantitatif Terminal'  },
-  { id: 'simulation', label: '10k Simülasyon Lab'   },
-  { id: 'portfolio',  label: 'Portföy Atölyesi'     },
+  { id: 'dashboard',  label: 'Piyasa'     },
+  { id: 'terminal',   label: 'Terminal'   },
+  { id: 'simulation', label: 'Simülasyon' },
+  { id: 'portfolio',  label: 'Portföy'    },
 ];
 
 // Popüler Wall Street ve Kripto Varlıkları
@@ -137,7 +137,6 @@ export const Navigation: React.FC<NavigationProps> = ({
         {/* Brand / Logotype */}
         <div className="brand-section" onClick={() => onSelectTab('dashboard')} style={{ cursor: 'pointer' }}>
           <div className="brand-logotype">NeuroQuant</div>
-          <div className="brand-tagline">Google TimesFM 3.0 &amp; Çok-Faktörlü Quant Motoru · Est. 2024</div>
         </div>
 
         {/* Date line — newspaper style */}

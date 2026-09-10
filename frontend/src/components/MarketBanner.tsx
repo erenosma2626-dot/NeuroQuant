@@ -59,7 +59,7 @@ export const MarketBanner: React.FC<MarketBannerProps> = ({ data }) => {
           {data.ticker}
         </div>
         <div style={{ fontSize: '0.75rem', color: 'var(--ink-secondary)', marginTop: 4 }}>
-          Kantitatif Terminal · Ref: {data.benchmark}
+          Benchmark: {data.benchmark}
         </div>
       </div>
 

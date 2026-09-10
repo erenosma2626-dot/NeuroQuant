@@ -7,7 +7,6 @@ interface QuantMatrixProps {
 
 export const QuantMatrix: React.FC<QuantMatrixProps> = ({ forecast }) => {
   const isUp = forecast.median_5d_return_pct >= 0;
-  const engineTitle = forecast.engine || 'Google TimesFM 3.0 Foundation Model';
 
   const BandCell = ({
     label, value, color, leftBorder,
@@ -41,24 +40,11 @@ export const QuantMatrix: React.FC<QuantMatrixProps> = ({ forecast }) => {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', fontWeight: 700, fontStyle: 'italic', color: 'var(--ink-primary)' }}>
-              5-Günlük Olasılıksal Güven Konisi
+              Model Tahmin Bantları
             </div>
-            <span style={{
-              fontSize: '0.65rem',
-              fontWeight: 700,
-              letterSpacing: '0.06em',
-              textTransform: 'uppercase',
-              padding: '2px 8px',
-              borderRadius: 'var(--radius-xs)',
-              background: 'rgba(20, 83, 45, 0.08)',
-              color: 'var(--forest-gain)',
-              border: '1px solid rgba(20, 83, 45, 0.2)'
-            }}>
-              Google TimesFM 3.0
-            </span>
           </div>
-          <div style={{ fontSize: '0.72rem', color: 'var(--ink-secondary)', marginTop: 3 }}>
-            {engineTitle} · %80 güven bantları (q10, q50, q90)
+          <div style={{ fontSize: '0.72rem', color: 'var(--ink-muted)', marginTop: 3 }}>
+            TimesFM 3.0 &middot; 5 Günlük Olasılık Dağılımı (%80 Güven Bandı)
           </div>
         </div>
         <span className="tabular" style={{ fontSize: '0.72rem', color: 'var(--ink-muted)', marginTop: 2 }}>
@@ -76,7 +62,7 @@ export const QuantMatrix: React.FC<QuantMatrixProps> = ({ forecast }) => {
       }}>
         <div>
           <div style={{ fontSize: '0.62rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-muted)', marginBottom: 4 }}>
-            Temel Model Konsensüs Kararı
+            Model Kararı
           </div>
           <div style={{
             fontFamily: 'var(--font-display)',
@@ -166,10 +152,10 @@ export const QuantMatrix: React.FC<QuantMatrixProps> = ({ forecast }) => {
           gap: 8,
         }}>
           <div>
-            <strong>Tahmin Motoru:</strong> Google TimesFM 3.0 (Zero-Shot Temporal Attention Foundation Model)
+            <strong>Model:</strong> TimesFM 3.0
           </div>
           <div className="tabular">
-            Ufuk: +5 İş Günü · Güven Düzeyi: %80 (q10–q90)
+            Vade: 5 Gün · Güven: %80 (q10–q90)
           </div>
         </div>
       </div>

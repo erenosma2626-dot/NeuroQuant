@@ -545,7 +545,7 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
                         <div
                           style={{ cursor: 'pointer' }}
                           onClick={() => { onSelectTicker(pos.ticker); onNavigateTab('terminal'); }}
-                          title="Kantitatif Terminalde Aç"
+                          title="Terminalde Aç"
                         >
                           <span className="tabular" style={{ fontWeight: 700, color: 'var(--ink-primary)', textDecoration: 'underline' }}>
                             {pos.ticker}

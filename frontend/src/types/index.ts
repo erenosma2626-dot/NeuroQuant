@@ -183,8 +183,9 @@ export interface AgentCommentData {
   technical_regime: string;
   fundamental_valuation: string;
   sentiment_and_catalysts: string;
-  risk_factors: string[];
+  risk_factors?: string[];
   suggested_action: string;
+  strategic_actions?: Array<{ title: string; detail: string }>;
 }
 
 export interface ScreenerItem {
