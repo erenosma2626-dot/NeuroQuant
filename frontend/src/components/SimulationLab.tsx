@@ -9,20 +9,45 @@ export const SimulationLab: React.FC<SimulationLabProps> = ({ simulation }) => {
   const timeline    = simulation.timeline || [];
   const totalSteps  = timeline.length;
 
-  // Başlangıçta simülasyonun tamamlanmış nihai eğrisini doğrudan göster
-  const [currentStepIndex, setCurrentStepIndex] = useState(() => Math.max(0, totalSteps - 1));
-  const [isPlaying, setIsPlaying]               = useState(false);
-  const [playbackSpeed, setPlaybackSpeed]       = useState<number>(2);
-  const [selectedTrade, setSelectedTrade]       = useState<TradeEvent | null>(null);
+  const svgRef = React.useRef<SVGSVGElement>(null);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
-  // Hisse (ticker) veya zaman çizgisi değiştiğinde state'i yeni hisseye senkronize et
+  // Otomatik 2x oynatma: Simülasyon başladığında 0'dan başlar ve sona doğru 2x hızla akar
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [selectedTrade, setSelectedTrade] = useState<TradeEvent | null>(null);
+
+  // Hisse veya zaman çizgisi değiştiğinde baştan otomatik başlat
   useEffect(() => {
-    setIsPlaying(false);
     setSelectedTrade(null);
-    setCurrentStepIndex(Math.max(0, simulation.timeline.length - 1));
-  }, [simulation.ticker, simulation.timeline.length]);
+    setHoveredIndex(null);
+    setCurrentStepIndex(0);
+    setIsPlaying(true);
+  }, [simulation.ticker, simulation.timeline?.length]);
 
-  const currentStep: SimulationStep = timeline[currentStepIndex] || timeline[0] || {
+  // Otomatik oynatma döngüsü (2x hız)
+  useEffect(() => {
+    let timer: any = null;
+    if (isPlaying && totalSteps > 0) {
+      const ms = 25; // Hızlı ve akıcı 2x geçiş
+      timer = setInterval(() => {
+        setCurrentStepIndex((prev) => {
+          if (prev >= totalSteps - 1) {
+            setIsPlaying(false);
+            return totalSteps - 1;
+          }
+          return prev + 1;
+        });
+      }, ms);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [isPlaying, totalSteps]);
+
+  // Mouse grafik üzerindeyken hoveredIndex gösterilir, yoksa animasyon adımı
+  const displayStepIndex = hoveredIndex !== null ? hoveredIndex : currentStepIndex;
+  const activeStep: SimulationStep = timeline[displayStepIndex] || timeline[0] || {
     date: simulation.start_date || '',
     price: 0,
     ai_equity: simulation.initial_capital || 10000,
@@ -33,39 +58,15 @@ export const SimulationLab: React.FC<SimulationLabProps> = ({ simulation }) => {
     confidence_score: 50,
   };
 
-  // Playback timer
-  useEffect(() => {
-    let timer: any = null;
-    if (isPlaying) {
-      const ms = Math.max(20, 380 / playbackSpeed);
-      timer = setInterval(() => {
-        setCurrentStepIndex((prev) => {
-          if (prev >= totalSteps - 1) { setIsPlaying(false); return totalSteps - 1; }
-          return prev + 1;
-        });
-      }, ms);
-    }
-    return () => { if (timer) clearInterval(timer); };
-  }, [isPlaying, playbackSpeed, totalSteps]);
-
-  const handleRestart = () => { setIsPlaying(false); setCurrentStepIndex(0); };
-
-  const handleTogglePlay = () => {
-    if (!isPlaying && currentStepIndex >= totalSteps - 1) {
-      setCurrentStepIndex(0);
-    }
-    setIsPlaying(!isPlaying);
-  };
-
-  const aiReturn  = ((currentStep.ai_equity    - simulation.initial_capital) / simulation.initial_capital) * 100;
-  const bhReturn  = ((currentStep.buy_hold_equity - simulation.initial_capital) / simulation.initial_capital) * 100;
+  const aiReturn = ((activeStep.ai_equity - simulation.initial_capital) / simulation.initial_capital) * 100;
+  const bhReturn = ((activeStep.buy_hold_equity - simulation.initial_capital) / simulation.initial_capital) * 100;
 
   // SVG geometry
   const svgW = 1080;
   const svgH = 360;
-  const pad  = { top: 30, right: 40, bottom: 48, left: 80 };
+  const pad  = { top: 68, right: 40, bottom: 44, left: 75 };
 
-  const activeTimeline = timeline.slice(0, currentStepIndex + 1);
+  const activeTimeline = (isPlaying && hoveredIndex === null) ? timeline.slice(0, currentStepIndex + 1) : timeline;
   const allEquities    = timeline.flatMap(t => [t.ai_equity, t.buy_hold_equity]);
   const minEq = allEquities.length > 0 ? Math.min(...allEquities, 9200) * 0.975 : 9000;
   const maxEq = allEquities.length > 0 ? Math.max(...allEquities, 10800) * 1.025 : 11000;
@@ -92,115 +93,109 @@ export const SimulationLab: React.FC<SimulationLabProps> = ({ simulation }) => {
     return { val, y: getY(val) };
   });
 
+  // Mouse ile grafik üzerinde gezinme
+  const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    if (!svgRef.current || totalSteps <= 1) return;
+    const rect = svgRef.current.getBoundingClientRect();
+    const clientX = e.clientX - rect.left;
+    const scaleX = svgW / rect.width;
+    const svgX = clientX * scaleX;
+
+    const plotLeft = pad.left;
+    const plotRight = svgW - pad.right;
+    const plotW = plotRight - plotLeft;
+
+    const clampedX = Math.max(plotLeft, Math.min(plotRight, svgX));
+    const ratio = (clampedX - plotLeft) / plotW;
+    const stepIdx = Math.round(ratio * (totalSteps - 1));
+    setHoveredIndex(Math.max(0, Math.min(totalSteps - 1, stepIdx)));
+  };
+
+  const handleMouseLeave = () => {
+    setHoveredIndex(null);
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', animation: 'fadeUp 0.35s ease' }}>
 
-      {/* ── PAGE HEADER ─────────────────────────────────────────────────── */}
-      <div style={{
-        padding: '1.25rem 0 0',
-        borderTop: '3px solid var(--ink-primary)',
-        display: 'flex',
-        alignItems: 'baseline',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        gap: 12,
-      }}>
-        <div>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.85rem', fontWeight: 700, color: 'var(--ink-primary)', letterSpacing: '-0.02em', lineHeight: 1 }}>
-            Simülasyon
-          </h1>
-          <div style={{ fontSize: '0.82rem', color: 'var(--ink-muted)', marginTop: 6 }}>
-            {simulation.ticker} &middot; Model sinyalleri ile Al-Tut stratejisinin 6 aylık karşılaştırmalı getiri ve risk seyri
-          </div>
-        </div>
-      </div>
-
-      {/* ── CHART PANEL ─────────────────────────────────────────────────── */}
+      {/* ── CHART PANEL (Başlık ve çubuk kaldırıldı, doğrudan grafikle başlıyor) ─────────────── */}
       <div className="panel" style={{ borderTop: '2px solid var(--ink-secondary)' }}>
 
-        {/* Controls bar */}
-        <div className="sim-controls">
-          {/* Play / Pause */}
-          <button className="sim-play-btn" onClick={handleTogglePlay}>
-            {isPlaying ? '⏸ Duraklat' : '▶ Oynat'}
-          </button>
+        {/* SVG Chart Wrapper with Floating Stats in Top-Left */}
+        <div style={{ position: 'relative', width: '100%', background: 'var(--paper-card)', borderBottom: '1px solid var(--rule-hairline)', overflow: 'hidden' }}>
 
-          {/* Restart */}
-          <button className="btn btn-secondary" onClick={handleRestart} style={{ fontSize: '0.78rem', padding: '6px 14px' }}>
-            ↺ Başa Al
-          </button>
-
-          {/* Speed selector */}
-          <div style={{ display: 'flex', gap: 2, background: 'var(--paper-card)', padding: 2, borderRadius: 4, border: '1px solid var(--rule-strong)' }}>
-            {[1, 2, 5, 10].map((s) => (
-              <button
-                key={s}
-                onClick={() => setPlaybackSpeed(s)}
-                style={{
-                  padding: '4px 10px',
-                  border: 'none',
-                  borderRadius: 3,
-                  background: playbackSpeed === s ? 'var(--ink-primary)' : 'transparent',
-                  color: playbackSpeed === s ? 'var(--paper-card)' : 'var(--ink-muted)',
-                  fontFamily: 'var(--font-mono)',
-                  fontWeight: 600,
-                  fontSize: '0.72rem',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s',
-                }}
-              >
-                {s}×
-              </button>
-            ))}
-          </div>
-
-          {/* Date / scrubber */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, marginLeft: '0.5rem' }}>
-            <span className="tabular" style={{ fontSize: '0.8rem', color: 'var(--ink-secondary)', minWidth: 90, fontFamily: 'var(--font-mono)' }}>
-              {currentStep.date}
-            </span>
-            <input
-              type="range"
-              min={0}
-              max={totalSteps - 1}
-              value={currentStepIndex}
-              onChange={(e) => { setIsPlaying(false); setCurrentStepIndex(Number(e.target.value)); }}
-              className="sim-scrubber"
-              style={{ flex: 1 }}
-            />
-            <span className="tabular" style={{ fontSize: '0.75rem', color: 'var(--ink-muted)', minWidth: 65, fontFamily: 'var(--font-mono)' }}>
-              {currentStepIndex + 1}/{totalSteps}G
-            </span>
-          </div>
-
-          {/* Live equity readout */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexShrink: 0 }}>
+          {/* Floating Return Badges & Date (Sol Üst Köşe) */}
+          <div style={{
+            position: 'absolute',
+            top: '1rem',
+            left: '1.25rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '1.25rem',
+            background: 'rgba(250, 248, 243, 0.95)',
+            backdropFilter: 'blur(8px)',
+            padding: '8px 16px',
+            borderRadius: 'var(--radius-sm)',
+            border: '1px solid var(--rule-strong)',
+            boxShadow: '0 2px 10px rgba(26,21,18,0.05)',
+            zIndex: 10,
+            pointerEvents: 'none',
+          }}>
+            {/* NeuroQuant AI */}
             <div>
-              <div style={{ fontSize: '0.58rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-muted)', marginBottom: 2 }}>NeuroQuant AI</div>
-              <div className="tabular" style={{ fontWeight: 700, fontSize: '0.95rem', color: aiReturn >= 0 ? 'var(--forest-gain)' : 'var(--madder-loss)' }}>
-                ${currentStep.ai_equity.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                <span style={{ fontSize: '0.72rem', marginLeft: 5, opacity: 0.85 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                <span style={{ width: 12, height: 3, background: '#14532D', borderRadius: 1.5 }} />
+                <span style={{ fontSize: '0.62rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ink-muted)' }}>
+                  NeuroQuant AI
+                </span>
+              </div>
+              <div className="tabular" style={{ fontWeight: 700, fontSize: '1.1rem', color: aiReturn >= 0 ? 'var(--forest-gain)' : 'var(--madder-loss)', lineHeight: 1.1 }}>
+                ${activeStep.ai_equity.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                <span style={{ fontSize: '0.78rem', marginLeft: 5, fontWeight: 600 }}>
                   ({aiReturn >= 0 ? '+' : ''}{aiReturn.toFixed(2)}%)
                 </span>
               </div>
             </div>
-            <div style={{ width: 1, height: 28, background: 'var(--rule-strong)' }} />
+
+            <div style={{ width: 1, height: 30, background: 'var(--rule-strong)' }} />
+
+            {/* Al-Tut (Referans) */}
             <div>
-              <div style={{ fontSize: '0.58rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-muted)', marginBottom: 2 }}>Al-Tut (Referans)</div>
-              <div className="tabular" style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--ink-secondary)' }}>
-                ${currentStep.buy_hold_equity.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                <span style={{ fontSize: '0.72rem', marginLeft: 5, opacity: 0.85 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                <span style={{ width: 12, height: 2, borderTop: '2px dashed #8C827A' }} />
+                <span style={{ fontSize: '0.62rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ink-muted)' }}>
+                  Al-Tut (Referans)
+                </span>
+              </div>
+              <div className="tabular" style={{ fontWeight: 600, fontSize: '1.1rem', color: 'var(--ink-secondary)', lineHeight: 1.1 }}>
+                ${activeStep.buy_hold_equity.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                <span style={{ fontSize: '0.78rem', marginLeft: 5, fontWeight: 500 }}>
                   ({bhReturn >= 0 ? '+' : ''}{bhReturn.toFixed(2)}%)
                 </span>
               </div>
             </div>
+
+            <div style={{ width: 1, height: 30, background: 'var(--rule-strong)' }} />
+
+            {/* Active Date */}
+            <div>
+              <div style={{ fontSize: '0.62rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ink-muted)', marginBottom: 2 }}>
+                Tarih {hoveredIndex !== null ? '· İnceleme' : ''}
+              </div>
+              <div className="tabular" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.9rem', fontWeight: 600, color: 'var(--ink-primary)', lineHeight: 1.1 }}>
+                {activeStep.date}
+              </div>
+            </div>
           </div>
-        </div>
 
-        {/* SVG Chart — paper/ivory background */}
-        <div style={{ width: '100%', background: 'var(--paper-card)', borderBottom: '1px solid var(--rule-hairline)', overflow: 'hidden' }}>
-          <svg viewBox={`0 0 ${svgW} ${svgH}`} style={{ width: '100%', height: 'auto', display: 'block' }}>
-
+          {/* SVG Chart */}
+          <svg
+            ref={svgRef}
+            viewBox={`0 0 ${svgW} ${svgH}`}
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeave}
+            style={{ width: '100%', height: 'auto', display: 'block', cursor: 'crosshair' }}
+          >
             {/* Y-axis grid lines */}
             {yTicks.map(({ val, y }, i) => (
               <g key={i}>
@@ -223,6 +218,27 @@ export const SimulationLab: React.FC<SimulationLabProps> = ({ simulation }) => {
               $10,000
             </text>
 
+            {/* X-axis date labels */}
+            {[0, 0.25, 0.5, 0.75, 1].map((pct, idx) => {
+              const stepIdx = Math.min(totalSteps - 1, Math.round(pct * (totalSteps - 1)));
+              if (stepIdx < 0 || !timeline[stepIdx]) return null;
+              const xPos = getX(stepIdx);
+              const anchor = idx === 0 ? 'start' : idx === 4 ? 'end' : 'middle';
+              return (
+                <text
+                  key={idx}
+                  x={xPos}
+                  y={svgH - pad.bottom + 20}
+                  fill="#8C827A"
+                  fontSize="9"
+                  textAnchor={anchor}
+                  fontFamily="'JetBrains Mono', monospace"
+                >
+                  {timeline[stepIdx].date}
+                </text>
+              );
+            })}
+
             {/* Buy & Hold line — stone dashed */}
             <path d={bhPath} fill="none" stroke="#8C827A" strokeWidth="1.8"
               strokeDasharray="5,4" opacity="0.7" />
@@ -230,12 +246,12 @@ export const SimulationLab: React.FC<SimulationLabProps> = ({ simulation }) => {
             {/* AI line — Forest Green */}
             <path d={aiPath} fill="none" stroke="#14532D" strokeWidth="3" />
 
-            {/* Trade markers (Clean dots with tooltip on hover, click for rationale) */}
+            {/* Trade markers */}
             {simulation.trades.map((tr) => {
-              if (tr.day_index > currentStepIndex) return null;
+              if (tr.day_index > displayStepIndex && isPlaying && hoveredIndex === null) return null;
               const xPos = getX(tr.day_index);
-              const yPos = getY(timeline[tr.day_index].ai_equity);
-              const isBuy = tr.action === 'ALIM';
+              const yPos = getY(timeline[tr.day_index]?.ai_equity ?? 10000);
+              const isBuy = tr.action === 'ALIM' || tr.action.includes('ALIM');
               return (
                 <g key={tr.day_index} style={{ cursor: 'pointer' }} onClick={() => setSelectedTrade(tr)}>
                   <title>{`${tr.date} · ${tr.action} (${tr.badge}) @ $${tr.price.toFixed(2)} — Tıklayarak gerekçeyi açın`}</title>
@@ -246,24 +262,43 @@ export const SimulationLab: React.FC<SimulationLabProps> = ({ simulation }) => {
               );
             })}
 
-            {/* Live cursor */}
-            {activeTimeline.length > 0 && (
-              <circle cx={getX(currentStepIndex)} cy={getY(currentStep.ai_equity)}
-                r={5} fill="#1E3A8A" stroke="#FAF8F3" strokeWidth="2" />
+            {/* Hover Crosshair & Dots */}
+            {hoveredIndex !== null && (
+              <g pointerEvents="none">
+                <line
+                  x1={getX(displayStepIndex)}
+                  y1={pad.top}
+                  x2={getX(displayStepIndex)}
+                  y2={svgH - pad.bottom}
+                  stroke="#1E3A8A"
+                  strokeWidth="1.2"
+                  strokeDasharray="4,3"
+                  opacity="0.65"
+                />
+                <circle
+                  cx={getX(displayStepIndex)}
+                  cy={getY(activeStep.ai_equity)}
+                  r={5}
+                  fill="#14532D"
+                  stroke="#FAF8F3"
+                  strokeWidth="2"
+                />
+                <circle
+                  cx={getX(displayStepIndex)}
+                  cy={getY(activeStep.buy_hold_equity)}
+                  r={4}
+                  fill="#8C827A"
+                  stroke="#FAF8F3"
+                  strokeWidth="1.5"
+                />
+              </g>
             )}
 
-            {/* Legend */}
-            <g transform={`translate(${svgW - pad.right - 180}, ${pad.top})`}>
-              <rect x={0} y={0} width={160} height={44} rx={3}
-                fill="#FAF8F3" stroke="#DFD7C8" strokeWidth="1" />
-              <line x1={10} y1={14} x2={30} y2={14} stroke="#14532D" strokeWidth="3" />
-              <text x={36} y={18} fill="#1A1512" fontSize="10"
-                fontFamily="'Inter', sans-serif" fontWeight="600">NeuroQuant AI</text>
-              <line x1={10} y1={32} x2={30} y2={32} stroke="#8C827A"
-                strokeWidth="2" strokeDasharray="4,3" />
-              <text x={36} y={36} fill="#57534E" fontSize="10"
-                fontFamily="'Inter', sans-serif">Al-Tut (Referans)</text>
-            </g>
+            {/* Live Playback cursor (yalnızca hover yokken ve oynatılırken) */}
+            {hoveredIndex === null && isPlaying && activeTimeline.length > 0 && (
+              <circle cx={getX(currentStepIndex)} cy={getY(activeStep.ai_equity)}
+                r={5} fill="#1E3A8A" stroke="#FAF8F3" strokeWidth="2" />
+            )}
           </svg>
         </div>
 
@@ -281,16 +316,16 @@ export const SimulationLab: React.FC<SimulationLabProps> = ({ simulation }) => {
               Anlık Sermaye Dağılımı
             </span>
             <span className="tabular" style={{ fontSize: '0.85rem', color: 'var(--forest-gain)', fontWeight: 600 }}>
-              Hisse: ${currentStep.ai_stock_value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ({currentStep.weight_pct}%)
+              Hisse: ${activeStep.ai_stock_value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ({activeStep.weight_pct}%)
             </span>
             <span className="tabular" style={{ fontSize: '0.85rem', color: 'var(--ink-secondary)' }}>
-              Nakit: ${currentStep.ai_cash_value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ({100 - currentStep.weight_pct}%)
+              Nakit: ${activeStep.ai_cash_value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ({100 - activeStep.weight_pct}%)
             </span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontSize: '0.7rem', color: 'var(--ink-muted)' }}>Model Güveni:</span>
             <span className="tabular" style={{ fontWeight: 700, color: 'var(--cobalt)', fontSize: '0.9rem' }}>
-              %{currentStep.confidence_score.toFixed(1)}
+              %{activeStep.confidence_score.toFixed(1)}
             </span>
           </div>
         </div>
